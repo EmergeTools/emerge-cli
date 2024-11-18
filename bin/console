@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+require 'emerge_cli'
+
+# You can add fixtures and/or initialization code here to make experimenting
+# with your gem easier. For example:
+# require "pry"
+# Pry.start
+
+require 'irb'
+IRB.start(__FILE__)

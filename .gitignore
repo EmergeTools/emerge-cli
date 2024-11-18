@@ -1,0 +1,36 @@
+# SimpleCov
+coverage/
+
+# RSpec
+spec/examples.txt
+
+# Rake tasks
+.rake_tasks~
+
+# Bundler
+.bundle/
+
+# Yardoc
+.yardoc
+/_yardoc/
+
+# Documentation
+/doc/
+
+# Packages
+/pkg/
+
+# Reports
+/spec/reports/
+
+# Temporary files
+/tmp/
+
+# Gems
+*.gem
+
+# Gemfile lock
+Gemfile.lock
+
+# DS_Store
+.DS_Store
