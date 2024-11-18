@@ -26,9 +26,6 @@ jobs:
   minitest:
     name: Minitest
     runs-on: ubuntu-latest
-    defaults:
-      run:
-
     steps:
       - uses: actions/checkout@v4
 
