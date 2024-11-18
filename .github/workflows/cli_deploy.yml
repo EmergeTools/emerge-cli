@@ -1,0 +1,55 @@
+name: Build and Deploy CLI Binary
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build CLI Binary
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cli
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby and install dependencies
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2.2'
+          bundler-cache: true
+          working-directory: cli
+
+      - name: Install dependencies
+        run: |
+          gem install bundler
+          bundle install
+
+      - name: Build the gem
+        run: gem build emerge.gemspec
+
+      - name: Install the gem
+        run: gem install --user-install emerge-*.gem
+
+      - name: Update PATH and test emerge
+        run: |
+          export PATH="$(ruby -e 'puts Gem.user_dir')/bin:$PATH"
+          OUTPUT=$(emerge -h 2>&1 || true)
+          echo "$OUTPUT"
+
+          # Check for expected strings
+          echo "$OUTPUT" | grep -q "emerge integrate \[SUBCOMMAND\]" || { echo "Expected integrate command not found"; exit 1; }
+          echo "$OUTPUT" | grep -q "emerge upload \[SUBCOMMAND\]" || { echo "Expected upload command not found"; exit 1; }
+
+      # - name: Upload binary artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: emerge_cli
+      #     path: cli/emerge-cli-output
+      #     if-no-files-found: error

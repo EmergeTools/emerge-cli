@@ -1,0 +1,93 @@
+# Layout
+
+Layout/LineLength:
+  Max: 120
+
+Layout/EmptyLineAfterGuardClause:
+  Enabled: false
+
+# Lint
+
+Lint/DuplicateMethods:
+  Enabled: false
+
+Lint/MissingSuper:
+  Enabled: false
+
+# Metrics
+
+Metrics/AbcSize:
+  Enabled: false
+
+Metrics/ClassLength:
+  Enabled: false
+
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+Metrics/MethodLength:
+  Enabled: false
+
+Metrics/ParameterLists:
+  Max: 10
+
+Metrics/PerceivedComplexity:
+  Enabled: false
+
+Metrics/BlockLength:
+  Enabled: false
+
+Metrics/ModuleLength:
+  Max: 300
+
+# Naming
+
+Naming/AccessorMethodName:
+  Enabled: false
+
+Naming/MethodParameterName:
+  Enabled: false
+
+# Style
+
+Style/Documentation:
+  Enabled: false
+Style/FormatString:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/GlobalStdStream:
+  Enabled: false
+
+Style/GlobalVars:
+  Enabled: false
+
+Style/AccessorGrouping:
+  Enabled: false
+
+Style/InverseMethods:
+  Enabled: false
+
+Style/MultilineBlockChain:
+  Enabled: false
+
+Style/NegatedIf:
+  Enabled: false
+
+Style/NumericPredicate:
+  Enabled: false
+
+Style/RedundantCapitalW:
+  Enabled: false
+
+Style/RedundantParentheses:
+  Enabled: false
+
+Style/TrivialAccessors:
+  Enabled: false
+
+Style/ZeroLengthPredicate:
+  Enabled: false
+

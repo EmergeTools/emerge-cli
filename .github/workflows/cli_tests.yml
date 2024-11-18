@@ -1,0 +1,42 @@
+name: CLI Tests and Linting
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  rubocop:
+    name: Rubocop
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby and install dependencies
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2.2'
+          bundler-cache: true
+
+      - name: Run Rubocop
+        run: bundle exec rubocop --parallel
+
+  minitest:
+    name: Minitest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby and install dependencies
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2.2'
+          bundler-cache: true
+
+      - name: Run Minitest tests
+        run: |
+          bundle exec rake test TESTOPTS="--verbose"
+        env:
+          MINITEST_REPORTER: ProgressReporter
