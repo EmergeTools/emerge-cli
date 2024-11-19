@@ -113,7 +113,7 @@ module EmergeCLI
             end_config = !prompt.yes?("Do you want to continue adding more settings?")
           end while not end_config
           
-          File.write('emerge_config.yml', os_settings.to_yaml)
+          File.write('emerge_config.yml', config.to_yaml)
           Logger.info 'Configuration file created successfully!'
         end
 
