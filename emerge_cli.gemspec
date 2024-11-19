@@ -36,6 +36,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'open3', '~> 0.2.1'
   spec.add_dependency 'tty-prompt', '~> 0.23.1'
   spec.add_dependency 'tty-table', '~> 0.12.0'
+  spec.add_dependency 'xcodeproj', '~> 1.27.0'
 
   spec.add_development_dependency 'minitest', '~> 5.25.1'
   spec.add_development_dependency 'minitest-reporters', '~> 1.7.1'
