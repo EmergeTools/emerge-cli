@@ -1,20 +1,18 @@
-name: Build and Deploy CLI Binary
+name: RubyGems Deploy
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release (e.g. 1.0.0)'
-        required: true
-        type: string
 
 jobs:
   build:
-    name: Build CLI Binary
+    name: Build and Deploy CLI
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: cli
+    permissions:
+      id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
+      contents: write # IMPORTANT: this permission is required for `rake release` to push the release tag
 
     steps:
       - uses: actions/checkout@v4
@@ -31,13 +29,10 @@ jobs:
           gem install bundler
           bundle install
 
-      - name: Build the gem
-        run: gem build emerge.gemspec
+      - name: Build and install gem locally
+        run: bundle exec rake install
 
-      - name: Install the gem
-        run: gem install --user-install emerge-*.gem
-
-      - name: Update PATH and test emerge
+      - name: Test emerge CLI
         run: |
           export PATH="$(ruby -e 'puts Gem.user_dir')/bin:$PATH"
           OUTPUT=$(emerge -h 2>&1 || true)
@@ -47,9 +42,5 @@ jobs:
           echo "$OUTPUT" | grep -q "emerge integrate \[SUBCOMMAND\]" || { echo "Expected integrate command not found"; exit 1; }
           echo "$OUTPUT" | grep -q "emerge upload \[SUBCOMMAND\]" || { echo "Expected upload command not found"; exit 1; }
 
-      # - name: Upload binary artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: emerge_cli
-      #     path: cli/emerge-cli-output
-      #     if-no-files-found: error
+      - name: Release Gem
+        uses: rubygems/release-gem@v1
