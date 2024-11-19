@@ -14,7 +14,7 @@ require 'tty-table'
 module EmergeCLI
   module Commands
     module Config
-      class Snapshots < EmergeCLI::Commands::GlobalOptions
+      class SnapshotsIOS < EmergeCLI::Commands::GlobalOptions
         desc 'Configure snapshot testing for iOS'
 
         # Optional options
@@ -37,6 +37,7 @@ module EmergeCLI
         ENV_VARIABLES_PROMPT = 'Do you want to set any environment variables?'.freeze
         ENV_VARIABLES_FINISH_PROMPT = "Enter the environment variable you want to set (leave blank to finish) with \
 format KEY=VALUE".freeze
+        AVAILABLE_OS_VERSIONS = ['17.2', '17.5', '18.0'].freeze
 
         def initialize; end
 
@@ -173,9 +174,9 @@ format KEY=VALUE".freeze
 
         def get_os_version(prompt)
           os_version = prompt.select('Select the OS version you want to run the tests on') do |answer|
-            answer.choice '17.2', 17.2
-            answer.choice '17.5', 17.5
-            answer.choice '18.0', 18.0
+            AVAILABLE_OS_VERSIONS.each do |version|
+              answer.choice version, version.to_f
+            end
             answer.choice 'Custom', 'custom'
           end
           os_version = prompt.ask('Enter the OS version you want to run the tests on') if os_version == 'custom'

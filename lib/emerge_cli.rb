@@ -4,7 +4,7 @@ require_relative './commands/upload/snapshots/client_libraries/swift_snapshot_te
 require_relative './commands/upload/snapshots/client_libraries/paparazzi'
 require_relative './commands/upload/snapshots/client_libraries/default'
 require_relative './commands/integrate/fastlane'
-require_relative './commands/config/snapshots/snapshots'
+require_relative './commands/config/snapshots/snapshots_ios'
 
 require_relative './utils/git_info_provider'
 require_relative './utils/git_result'
@@ -29,7 +29,7 @@ module EmergeCLI
   end
 
   register 'configure' do |prefix|
-    prefix.register 'snapshots-ios', Commands::Config::Snapshots, aliases: ['c']
+    prefix.register 'snapshots-ios', Commands::Config::SnapshotsIOS, aliases: ['c']
   end
 end
 
