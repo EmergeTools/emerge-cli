@@ -45,18 +45,14 @@ format KEY=VALUE".freeze
           @options = options
           before(options)
 
-          begin
-            Sync do
-              validate_options
+          Sync do
+            validate_options
 
-              run_interactive_mode if @options[:interactive]
+            run_interactive_mode if @options[:interactive]
 
-              run_non_interactive_mode if !@options[:interactive]
+            run_non_interactive_mode if !@options[:interactive]
 
-              Logger.warn 'Remember to copy `emerge_config.yml` to your project XCArchive before uploading it!'
-            end
-          rescue StandardError => e
-            Logger.error "CLI Error: #{e.message}"
+            Logger.warn 'Remember to copy `emerge_config.yml` to your project XCArchive before uploading it!'
           end
         end
 
@@ -164,7 +160,7 @@ format KEY=VALUE".freeze
             'osVersion' => os_version,
             'excludedPreviews' => excluded_previews,
             'envVariables' => env_variables,
-            'arguments' => @options[:arguments] || []
+            'arguments' => @options[:launch_arguments] || []
           }
           config['snapshots']['ios']['runSettings'].push(os_settings)
           File.write('emerge_config.yml', config.to_yaml)
