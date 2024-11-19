@@ -27,6 +27,17 @@ module EmergeCLI
         option :exact_match_excluded_previews, type: :array, required: false, desc: 'Exact match excluded previews'
         option :regex_excluded_previews, type: :array, required: false, desc: 'Regex excluded previews'
 
+        # Constants
+        EXCLUDED_PREVIEW_PROMPT = 'Do you want to exclude any previews by exact match?'.freeze
+        EXCLUDED_PREVIEW_FINISH_PROMPT = 'Enter the previews you want to exclude (leave blank to finish)'.freeze
+        EXCLUDED_REGEX_PREVIEW_PROMPT = 'Do you want to exclude any previews by regex?'.freeze
+        EXCLUDED_REGEX_PREVIEW_FINISH_PROMPT = 'Enter the previews you want to exclude (leave blank to finish)'.freeze
+        ARGUMENTS_PROMPT = 'Do you want to set any arguments?'.freeze
+        ARGUMENTS_FINISH_PROMPT = 'Enter the argument you want to set (leave blank to finish)'.freeze
+        ENV_VARIABLES_PROMPT = 'Do you want to set any environment variables?'.freeze
+        ENV_VARIABLES_FINISH_PROMPT = "Enter the environment variable you want to set (leave blank to finish) with \
+format KEY=VALUE".freeze
+
         def initialize; end
 
         def call(**options)
@@ -51,7 +62,9 @@ module EmergeCLI
         private
 
         def validate_options
-          if @options[:interactive] && (!@options[:os_version].nil? || !@options[:launch_arguments].nil? || !@options[:env_variables].nil? || !@options[:exact_match_excluded_previews].nil? || !@options[:regex_excluded_previews].nil?)
+          if @options[:interactive] && (!@options[:os_version].nil? || !@options[:launch_arguments].nil? ||
+             !@options[:env_variables].nil? || !@options[:exact_match_excluded_previews].nil? ||
+             !@options[:regex_excluded_previews].nil?)
             Logger.warn 'All options are ignored when using interactive mode'
           end
         end
@@ -87,14 +100,11 @@ module EmergeCLI
           loop do
             os_version = get_os_version(prompt)
 
-            excluded_previews = get_array_from_user(prompt, 'Do you want to exclude any previews by exact match?',
-                                                    'Enter the previews you want to exclude (leave blank to finish)')
-            excluded_regex_previews = get_array_from_user(prompt, 'Do you want to exclude any previews by regex?',
-                                                          'Enter the previews you want to exclude (leave blank to finish)')
-            arguments_array = get_array_from_user(prompt, 'Do you want to set any arguments?',
-                                                  'Enter the argument you want to set (leave blank to finish)')
-            env_variables_array = get_array_from_user(prompt, 'Do you want to set any environment variables?',
-                                                      'Enter the environment variable you want to set (leave blank to finish) with format KEY=VALUE')
+            excluded_previews = get_array_from_user(prompt, EXCLUDED_PREVIEW_PROMPT, EXCLUDED_PREVIEW_FINISH_PROMPT)
+            excluded_regex_previews = get_array_from_user(prompt, EXCLUDED_REGEX_PREVIEW_PROMPT,
+                                                          EXCLUDED_REGEX_PREVIEW_FINISH_PROMPT)
+            arguments_array = get_array_from_user(prompt, ARGUMENTS_PROMPT, ARGUMENTS_FINISH_PROMPT)
+            env_variables_array = get_array_from_user(prompt, ENV_VARIABLES_PROMPT, ENV_VARIABLES_FINISH_PROMPT)
 
             excluded = get_parsed_previews(excluded_previews, excluded_regex_previews)
             env_variables = get_parsed_env_variables(env_variables_array)
@@ -121,7 +131,8 @@ module EmergeCLI
           config = {}
           if File.exist?('emerge_config.yml')
             config = YAML.load_file('emerge_config.yml')
-            if !@options[:clear] && !config['snapshots'].nil? && !config['snapshots']['ios'].nil? && !config['snapshots']['ios']['runSettings'].nil?
+            if !@options[:clear] && !config['snapshots'].nil? && !config['snapshots']['ios'].nil? &&
+               !config['snapshots']['ios']['runSettings'].nil?
               raise 'There is already a configuration file with settings. Use the --clear flag to overwrite it.'
             end
 
