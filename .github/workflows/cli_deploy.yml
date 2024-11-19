@@ -26,11 +26,15 @@ jobs:
           bundle install
 
       - name: Build and install gem locally
-        run: bundle exec rake install
+        run: |
+          bundle exec rake build
+          gem install pkg/*.gem
 
       - name: Test emerge CLI
         run: |
-          export PATH="$(ruby -e 'puts Gem.user_dir')/bin:$PATH"
+          # Update PATH to include both system and user gem paths
+          export PATH="$(ruby -e 'puts Gem.user_dir')/bin:$(ruby -e 'puts Gem.dir')/bin:$PATH"
+
           OUTPUT=$(emerge -h 2>&1 || true)
           echo "$OUTPUT"
 

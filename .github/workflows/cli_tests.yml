@@ -7,14 +7,13 @@ on:
     branches: [main]
 
 jobs:
-  rubocop:
-    name: Rubocop
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Ruby and install dependencies
+      - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2.2'
@@ -23,16 +22,21 @@ jobs:
       - name: Run Rubocop
         run: bundle exec rubocop --parallel
 
-  minitest:
-    name: Minitest
-    runs-on: ubuntu-latest
+  test:
+    name: Test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        ruby-version: ['3.2.2']
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Ruby and install dependencies
+      - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.2.2'
+          ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true
 
       - name: Run Minitest tests
