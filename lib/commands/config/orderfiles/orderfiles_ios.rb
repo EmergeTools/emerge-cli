@@ -7,7 +7,7 @@ module EmergeCLI
         desc 'Configure order files for iOS'
 
         # Optional options
-        option :only_enable_linkmaps, type: :boolean, required: false, desc: 'Only enable linkmaps'
+        option :skip_download_script, type: :boolean, required: false, desc: 'Only enable linkmaps'
         option :project_path, type: :string, required: false,
                               desc: 'Path to the xcode project (will use first found if not provided)'
 
@@ -33,7 +33,7 @@ module EmergeCLI
 
           enable_linkmaps(project)
 
-          add_order_files_download_script(project) unless @options[:only_enable_linkmaps]
+          add_order_files_download_script(project) unless @options[:skip_download_script]
 
           project.save
         end

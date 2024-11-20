@@ -43,7 +43,7 @@ module EmergeCLI
         def test_linkmaps_are_enabled_only
           options = {
             project_path: 'tmp/test_orderfiles/ExampleApp.xcodeproj',
-            only_enable_linkmaps: true
+            skip_download_script: true
           }
 
           @command.call(**options)
