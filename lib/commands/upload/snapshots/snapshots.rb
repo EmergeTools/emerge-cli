@@ -121,9 +121,7 @@ module EmergeCLI
 
         def find_image_files(client)
           found_images = client.image_files
-          if found_images.empty?
-            raise 'No images found. Please check your image paths or project configuration.'
-          end
+          raise 'No images found. Please check your image paths or project configuration.' if found_images.empty?
           Logger.info "Found #{found_images.size} images"
           found_images
         end
