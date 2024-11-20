@@ -67,21 +67,22 @@ module EmergeCLI
             if phase.nil?
               Logger.info "  Creating script 'Download Order Files'"
               phase = target.new_shell_script_build_phase('Download Order Files')
-              phase.shell_script = "\
-if [ \"$CONFIGURATION\" != \"Release\" ]; then
-  echo \"Skipping script for non-Release build\"
-  exit 0
-fi
+              phase.shell_script = <<~BASH
+                if [ "$CONFIGURATION" != "Release" ]; then
+                  echo "Skipping script for non-Release build"
+                  exit 0
+                fi
 
-if curl --fail \"https://order-files-prod.emergetools.com/$PRODUCT_BUNDLE_IDENTIFIER/$MARKETING_VERSION\" \\
-  -H \"X-API-Token: $EMERGE_API_TOKEN\" -o ORDER_FILE.gz ; then
-    mkdir -p \"$PROJECT_DIR/orderfiles\"
-    gunzip -c ORDER_FILE.gz > $PROJECT_DIR/orderfiles/orderfile.txt
-else
-    echo \"cURL request failed. Creating an empty file.\"
-    mkdir -p \"$PROJECT_DIR/orderfiles\"
-    touch \"$PROJECT_DIR/orderfiles/orderfile.txt\"
-fi;"
+                if curl --fail "https://order-files-prod.emergetools.com/$PRODUCT_BUNDLE_IDENTIFIER/$MARKETING_VERSION" \
+                  -H "X-API-Token: $EMERGE_API_TOKEN" -o ORDER_FILE.gz ; then
+                    mkdir -p "$PROJECT_DIR/orderfiles"
+                    gunzip -c ORDER_FILE.gz > $PROJECT_DIR/orderfiles/orderfile.txt
+                else
+                    echo "cURL request failed. Creating an empty file."
+                    mkdir -p "$PROJECT_DIR/orderfiles"
+                    touch "$PROJECT_DIR/orderfiles/orderfile.txt"
+                fi;
+              BASH
               phase.output_paths = ['$(PROJECT_DIR)/orderfiles/orderfile.txt']
             else
               Logger.info "  'Download Order Files' already exists"
