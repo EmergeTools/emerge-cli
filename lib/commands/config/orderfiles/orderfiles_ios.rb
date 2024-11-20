@@ -63,10 +63,10 @@ module EmergeCLI
             Logger.info "  Target: #{target.name}"
 
             # Create the script phase if it doesn't exist
-            phase = target.shell_script_build_phases.find { |item| item.name == 'Download Order Files' }
+            phase = target.shell_script_build_phases.find { |item| item.name == 'EmergeTools Download Order Files' }
             if phase.nil?
-              Logger.info "  Creating script 'Download Order Files'"
-              phase = target.new_shell_script_build_phase('Download Order Files')
+              Logger.info "  Creating script 'EmergeTools Download Order Files'"
+              phase = target.new_shell_script_build_phase('EmergeTools Download Order Files')
               phase.shell_script = <<~BASH
                 if [ "$CONFIGURATION" != "Release" ]; then
                   echo "Skipping script for non-Release build"
@@ -85,7 +85,7 @@ module EmergeCLI
               BASH
               phase.output_paths = ['$(PROJECT_DIR)/orderfiles/orderfile.txt']
             else
-              Logger.info "  'Download Order Files' already exists"
+              Logger.info "  'EmergeTools Download Order Files' already exists"
             end
             # Make sure it is the first build phase
             target.build_phases.move(phase, 0)

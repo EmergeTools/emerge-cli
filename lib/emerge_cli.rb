@@ -30,8 +30,8 @@ module EmergeCLI
   end
 
   register 'configure' do |prefix|
-    prefix.register 'snapshots-ios', Commands::Config::SnapshotsIOS, aliases: ['c']
-    prefix.register 'order-files-ios', Commands::Config::OrderFilesIOS, aliases: ['o']
+    prefix.register 'snapshots-ios', Commands::Config::SnapshotsIOS
+    prefix.register 'order-files-ios', Commands::Config::OrderFilesIOS
   end
 end
 

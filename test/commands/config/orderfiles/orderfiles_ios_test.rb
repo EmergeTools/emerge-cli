@@ -36,7 +36,9 @@ module EmergeCLI
             assert_equal ORDER_FILE_PATH, config.build_settings[ORDER_FILE]
           end
 
-          phase = project.targets[0].shell_script_build_phases.find { |item| item.name == 'Download Order Files' }
+          phase = project.targets[0].shell_script_build_phases.find do |item|
+            item.name == 'EmergeTools Download Order Files'
+          end
           assert_equal ORDER_FILE_PATH, phase.output_paths[0]
         end
 
@@ -56,7 +58,9 @@ module EmergeCLI
             refute_equal ORDER_FILE_PATH, config.build_settings[ORDER_FILE]
           end
 
-          phase = project.targets[0].shell_script_build_phases.find { |item| item.name == 'Download Order Files' }
+          phase = project.targets[0].shell_script_build_phases.find do |item|
+            item.name == 'EmergeTools Download Order Files'
+          end
           assert_nil phase
         end
       end
