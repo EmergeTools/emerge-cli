@@ -16,6 +16,7 @@ module EmergeCLI
         LINK_MAPS_PATH = 'LD_MAP_FILE_PATH'.freeze
         PATH_TO_LINKMAP = '$(TARGET_TEMP_DIR)/$(PRODUCT_NAME)-LinkMap-$(CURRENT_VARIANT)-$(CURRENT_ARCH).txt'.freeze
         ORDER_FILE = 'ORDER_FILE'.freeze
+        ORDER_FILE_PATH = '$(PROJECT_DIR)/orderfiles/orderfile.txt'.freeze
 
         def initialize; end
 
@@ -89,7 +90,7 @@ fi;"
             target.build_phases.move(phase, 0)
 
             target.build_configurations.each do |config|
-              config.build_settings[ORDER_FILE] = '$(PROJECT_DIR)/orderfiles/orderfile.txt'
+              config.build_settings[ORDER_FILE] = ORDER_FILE_PATH
             end
           end
         end
