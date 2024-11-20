@@ -27,7 +27,7 @@ module EmergeCLI
         option :pr_number, type: :string, required: false, desc: 'PR number'
         option :concurrency, type: :integer, default: 5, desc: 'Number of concurrency for parallel uploads'
 
-        option :client_library, type: :string, required: false, values: %w[swift-snapshot-testing paparazzi],
+        option :client_library, type: :string, required: false, values: %w[swift-snapshot-testing paparazzi roborazzi],
                                 desc: 'Client library used for snapshots'
         option :project_root, type: :string, required: false, desc: 'Path to the project root'
 
@@ -88,7 +88,7 @@ module EmergeCLI
 
         def validate_options(image_paths)
           if @options[:client_library] && !@options[:project_root]
-            raise 'Project path is required when using a client library'
+            raise 'Project root is required when using a client library'
           end
           if @options[:project_root] && !@options[:client_library]
             raise 'Client library is required when using a project path'
@@ -98,11 +98,17 @@ module EmergeCLI
         end
 
         def create_client(image_paths)
-          case @options[:client_library]
-          when 'swift-snapshot-testing'
-            ClientLibraries::SwiftSnapshotTesting.new(@options[:project_root])
-          when 'paparazzi'
-            ClientLibraries::Paparazzi.new(@options[:project_root])
+          if @options[:client_library]
+            case @options[:client_library]
+            when 'swift-snapshot-testing'
+              ClientLibraries::SwiftSnapshotTesting.new(@options[:project_root])
+            when 'paparazzi'
+              ClientLibraries::Paparazzi.new(@options[:project_root])
+            when 'roborazzi'
+              ClientLibraries::Roborazzi.new(@options[:project_root])
+            else
+              raise "Unsupported client library: #{@options[:client_library]}"
+            end
           else
             ClientLibraries::Default.new(image_paths)
           end
