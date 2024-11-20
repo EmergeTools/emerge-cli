@@ -48,6 +48,7 @@ module EmergeCLI
 
           start_time = Time.now
           run_id = nil
+          success = false
 
           begin
             api_token = @options[:api_token] || ENV['EMERGE_API_TOKEN']
@@ -76,12 +77,16 @@ module EmergeCLI
             Logger.info "Time taken: #{(Time.now - start_time).round(2)} seconds"
             @profiler.report
             Logger.info "✅ View your snapshots at https://emergetools.com/snapshot/#{run_id}"
+            success = true
           rescue StandardError => e
             Logger.error "CLI Error: #{e.message}"
             Sync { report_error(run_id, e.message, 'crash') } if run_id
+            raise e # Re-raise the error to dry-cli
           ensure
             @network&.close
           end
+
+          success
         end
 
         private
@@ -116,6 +121,7 @@ module EmergeCLI
 
         def find_image_files(client)
           found_images = client.image_files
+          raise 'No images found. Please check your image paths or project configuration.' if found_images.empty?
           Logger.info "Found #{found_images.size} images"
           found_images
         end
