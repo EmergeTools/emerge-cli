@@ -4,21 +4,21 @@ module Emerge
   module Reaper
     class AstParser
       DECLARATION_NODE_TYPES = {
-        'swift' => %w[class_declaration protocol_declaration],
-        'kotlin' => %w[class_declaration protocol_declaration interface_declaration],
-        'java' => %w[class_declaration protocol_declaration interface_declaration]
+        'swift' => %i[class_declaration protocol_declaration],
+        'kotlin' => %i[class_declaration protocol_declaration interface_declaration],
+        'java' => %i[class_declaration protocol_declaration interface_declaration]
       }.freeze
 
       IDENTIFIER_NODE_TYPES = {
-        'swift' => %w[simple_identifier qualified_name identifier type_identifier],
-        'kotlin' => %w[simple_identifier qualified_name identifier type_identifier],
-        'java' => %w[simple_identifier qualified_name identifier type_identifier]
+        'swift' => %i[simple_identifier qualified_name identifier type_identifier],
+        'kotlin' => %i[simple_identifier qualified_name identifier type_identifier],
+        'java' => %i[simple_identifier qualified_name identifier type_identifier]
       }.freeze
 
       COMMENT_AND_IMPORT_NODE_TYPES = {
-        'swift' => %w[comment import_declaration],
-        'kotlin' => %w[comment import_header],
-        'java' => %w[comment import_declaration]
+        'swift' => %i[comment import_declaration],
+        'kotlin' => %i[comment import_header],
+        'java' => %i[comment import_declaration]
       }.freeze
 
       attr_reader :parser, :language
@@ -26,6 +26,7 @@ module Emerge
       def initialize(language)
         @parser = TreeSitter::Parser.new
         @language = language
+        @current_file_contents = nil
 
         case language
         when 'swift'
@@ -40,8 +41,9 @@ module Emerge
       end
 
       def delete_type(file_contents:, type_name:)
+        @current_file_contents = file_contents
         tree = @parser.parse_string(nil, file_contents)
-        cursor = tree.root_node.walk
+        cursor = TreeSitter::TreeCursor.new(tree.root_node)
         nodes_to_process = [cursor.current_node]
         lines_to_remove = []
 
@@ -60,7 +62,7 @@ module Emerge
             end
           end
 
-          node.named_children.each { |child| nodes_to_process.push(child) }
+          node.each_named { |child| nodes_to_process.push(child) }
         end
 
         lines = file_contents.split("\n")
@@ -77,13 +79,14 @@ module Emerge
         modified_source = lines.compact.join("\n")
         new_tree = @parser.parse_string(nil, modified_source)
 
-        return nil if only_comments_and_imports?(new_tree.root_node.walk)
+        return nil if only_comments_and_imports?(TreeSitter::TreeCursor.new(new_tree.root_node))
         modified_source
       end
 
       def find_usages(file_contents:, type_name:)
+        @current_file_contents = file_contents
         tree = @parser.parse_string(nil, file_contents)
-        cursor = tree.root_node.walk
+        cursor = TreeSitter::TreeCursor.new(tree.root_node)
         usages = []
         nodes_to_process = [cursor.current_node]
 
@@ -96,10 +99,10 @@ module Emerge
               usages << { line: node.start_position.row, usage_type: 'declaration' }
             end
           elsif identifier_type
-            usages << { line: node.start_position.row, usage_type: 'identifier' } if node.text == type_name
+            usages << { line: node.start_position.row, usage_type: 'identifier' } if node_text(node) == type_name
           end
 
-          node.children.each { |child| nodes_to_process.push(child) }
+          node.each { |child| nodes_to_process.push(child) }
         end
 
         usages
@@ -120,20 +123,25 @@ module Emerge
 
       def extension?(node)
         if node.type == 'class_declaration'
-          extension_node = node.children.select { |c| c.type == 'extension' }
-          return true if extension_node.length == 1
+          (0...node.child_count).each do |i|
+            child = node.child(i)
+            return true if child.type == 'extension'
+          end
         end
         false
       end
 
       def only_comments_and_imports?(root)
-        children = root.current_node.children
         types = comment_and_import_types
-        children.all? { |child| types.include?(child.type) }
+        child_count = root.current_node.child_count
+        (0...child_count).all? do |i|
+          child = root.current_node.child(i)
+          types.include?(child.type)
+        end
       end
 
       def fully_qualified_type_name(node)
-        class_name = node.text
+        class_name = node_text(node)
         current_node = node
         parent = find_parent_type_declaration(current_node)
 
@@ -142,10 +150,10 @@ module Emerge
           user_type = find_user_type(parent)
 
           if type_identifier && type_identifier != current_node
-            class_name = "#{type_identifier.text}.#{class_name}"
+            class_name = "#{node_text(type_identifier)}.#{class_name}"
             current_node = type_identifier
           elsif user_type && user_type != current_node
-            class_name = "#{user_type.text}.#{class_name}"
+            class_name = "#{node_text(user_type)}.#{class_name}"
             current_node = user_type
           end
 
@@ -156,21 +164,32 @@ module Emerge
       end
 
       def find_parent_type_declaration(node)
-        parent = node.parent
-        while parent
-          return parent if declaration_node_types.include?(parent.type)
-          parent = parent.parent
+        return nil unless node&.parent
+
+        current = node.parent
+        while current && !current.null?
+          return current if current.type && declaration_node_types.include?(current.type)
+          break unless current.parent && !current.parent.null?
+          current = current.parent
         end
         nil
       end
 
       def find_type_identifier(node)
         identifier_types = identifier_node_types
-        node.named_children.find { |child| identifier_types.include?(child.type) }
+        (0...node.named_child_count).each do |i|
+          child = node.named_child(i)
+          return child if identifier_types.include?(child.type)
+        end
+        nil
       end
 
       def find_user_type(node)
-        node.named_children.find { |child| child.type == 'user_type' }
+        (0...node.named_child_count).each do |i|
+          child = node.named_child(i)
+          return child if child.type == 'user_type'
+        end
+        nil
       end
 
       def declaration_node_types
@@ -183,6 +202,13 @@ module Emerge
 
       def comment_and_import_types
         COMMENT_AND_IMPORT_NODE_TYPES[language]
+      end
+
+      def node_text(node)
+        return '' unless @current_file_contents
+        start_byte = node.start_byte
+        end_byte = node.end_byte
+        @current_file_contents[start_byte...end_byte]
       end
     end
   end
