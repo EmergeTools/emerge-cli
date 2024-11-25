@@ -1,4 +1,4 @@
-require 'tree_sitter_ffi'
+require 'tree_sitter'
 
 module Emerge
   module Commands
