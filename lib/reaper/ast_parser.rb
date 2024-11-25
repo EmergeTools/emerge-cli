@@ -4,21 +4,21 @@ module Emerge
   module Reaper
     class AstParser
       DECLARATION_NODE_TYPES = {
-        'swift' => ['class_declaration', 'protocol_declaration'],
-        'kotlin' => ['class_declaration', 'protocol_declaration', 'interface_declaration'],
-        'java' => ['class_declaration', 'protocol_declaration', 'interface_declaration']
+        'swift' => %w[class_declaration protocol_declaration],
+        'kotlin' => %w[class_declaration protocol_declaration interface_declaration],
+        'java' => %w[class_declaration protocol_declaration interface_declaration]
       }.freeze
 
       IDENTIFIER_NODE_TYPES = {
-        'swift' => ['simple_identifier', 'qualified_name', 'identifier', 'type_identifier'],
-        'kotlin' => ['simple_identifier', 'qualified_name', 'identifier', 'type_identifier'],
-        'java' => ['simple_identifier', 'qualified_name', 'identifier', 'type_identifier']
+        'swift' => %w[simple_identifier qualified_name identifier type_identifier],
+        'kotlin' => %w[simple_identifier qualified_name identifier type_identifier],
+        'java' => %w[simple_identifier qualified_name identifier type_identifier]
       }.freeze
 
       COMMENT_AND_IMPORT_NODE_TYPES = {
-        'swift' => ['comment', 'import_declaration'],
-        'kotlin' => ['comment', 'import_header'],
-        'java' => ['comment', 'import_declaration']
+        'swift' => %w[comment import_declaration],
+        'kotlin' => %w[comment import_header],
+        'java' => %w[comment import_declaration]
       }.freeze
 
       attr_reader :parser, :language
@@ -45,8 +45,6 @@ module Emerge
         nodes_to_process = [cursor.current_node]
         lines_to_remove = []
 
-        modified_source = file_contents
-
         while (node = nodes_to_process.shift)
           if declaration_node_types.include?(node.type)
             type_identifier_node = find_type_identifier(node)
@@ -70,11 +68,10 @@ module Emerge
           (range[:start]..range[:end]).each { |i| lines[i] = nil }
 
           # Remove extra newline after class declaration
-          if range[:end] + 1 < lines.length &&
-             lines[range[:end] + 1] &&
-             lines[range[:end] + 1].match?(/^\s*$/)
-            lines[range[:end] + 1] = nil
-          end
+          next unless range[:end] + 1 < lines.length &&
+                      lines[range[:end] + 1] &&
+                      lines[range[:end] + 1].match?(/^\s*$/)
+          lines[range[:end] + 1] = nil
         end
 
         modified_source = lines.compact.join("\n")
@@ -99,9 +96,7 @@ module Emerge
               usages << { line: node.start_position.row, usage_type: 'declaration' }
             end
           elsif identifier_type
-            if node.text == type_name
-              usages << { line: node.start_position.row, usage_type: 'identifier' }
-            end
+            usages << { line: node.start_position.row, usage_type: 'identifier' } if node.text == type_name
           end
 
           node.children.each { |child| nodes_to_process.push(child) }
@@ -119,9 +114,8 @@ module Emerge
 
         # Remove comments before class declaration
         predecessor = node.previous_named_sibling
-        if predecessor && predecessor.type == 'comment'
-          lines_to_remove << { start: predecessor.start_position.row, end: predecessor.end_position.row }
-        end
+        return unless predecessor && predecessor.type == 'comment'
+        lines_to_remove << { start: predecessor.start_position.row, end: predecessor.end_position.row }
       end
 
       def extension?(node)
