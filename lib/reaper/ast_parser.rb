@@ -40,7 +40,7 @@ module Emerge
       end
 
       def delete_type(file_contents:, type_name:)
-        tree = @parser.parse_string(file_contents)
+        tree = @parser.parse_string(nil, file_contents)
         cursor = tree.root_node.walk
         nodes_to_process = [cursor.current_node]
         lines_to_remove = []
@@ -75,14 +75,14 @@ module Emerge
         end
 
         modified_source = lines.compact.join("\n")
-        new_tree = @parser.parse_string(modified_source)
+        new_tree = @parser.parse_string(nil, modified_source)
 
         return nil if only_comments_and_imports?(new_tree.root_node.walk)
         modified_source
       end
 
       def find_usages(file_contents:, type_name:)
-        tree = @parser.parse_string(file_contents)
+        tree = @parser.parse_string(nil, file_contents)
         cursor = tree.root_node.walk
         usages = []
         nodes_to_process = [cursor.current_node]
