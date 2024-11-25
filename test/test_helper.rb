@@ -2,6 +2,8 @@ require 'simplecov'
 require 'minitest/autorun'
 require 'minitest/pride' # For colorful output
 require 'minitest/reporters'
+require 'tmpdir'
+require 'fileutils'
 
 require_relative 'support/fake_network'
 require_relative 'support/fake_git_info_provider'
