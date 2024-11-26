@@ -4,11 +4,14 @@ module Emerge
   module Reaper
     class AstParserTest < Minitest::Test
       def run_test?
-        RUBY_PLATFORM.include?('darwin') && RUBY_PLATFORM.include?('arm64')
+        host_os = RbConfig::CONFIG['host_os']
+        host_cpu = RbConfig::CONFIG['host_cpu']
+        host_os =~ /darwin/ && host_cpu =~ /arm64/
       end
 
       def setup
-        skip "Skipping tests on non-darwin arm64 platform" unless run_test?
+        skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
+        super if defined?(super)
       end
 
       describe 'Swift' do
