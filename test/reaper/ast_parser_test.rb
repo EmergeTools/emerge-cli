@@ -558,6 +558,291 @@ module Emerge
           end
         end
       end
+      describe 'Kotlin' do
+        def setup
+          @language = 'kotlin'
+          @parser = AstParser.new(@language)
+        end
+
+        describe 'delete_type' do
+          def test_removes_class_from_kotlin_file
+            file_contents = <<~KOTLIN.strip
+              package com.emergetools.hackernews.features.bookmarks
+
+              import androidx.lifecycle.ViewModel
+              import androidx.lifecycle.ViewModelProvider
+              import androidx.lifecycle.viewModelScope
+              import com.emergetools.hackernews.data.local.BookmarkDao
+              import com.emergetools.hackernews.data.local.LocalBookmark
+              import com.emergetools.hackernews.data.relativeTimeStamp
+              import com.emergetools.hackernews.features.comments.CommentsDestinations
+              import com.emergetools.hackernews.features.stories.StoriesDestinations
+              import com.emergetools.hackernews.features.stories.StoryItem
+              import kotlinx.coroutines.Dispatchers
+              import kotlinx.coroutines.flow.MutableStateFlow
+              import kotlinx.coroutines.flow.asStateFlow
+              import kotlinx.coroutines.flow.update
+              import kotlinx.coroutines.launch
+
+              data class BookmarksState(
+                val bookmarks: List<StoryItem> = emptyList()
+              )
+
+              sealed interface BookmarksAction {
+                data class RemoveBookmark(val storyItem: StoryItem.Content) : BookmarksAction
+              }
+
+              sealed interface BookmarksNavigation {
+                data class GoToStory(val closeup: StoriesDestinations.Closeup) : BookmarksNavigation
+                data class GoToComments(val comments: CommentsDestinations.Comments) : BookmarksNavigation
+              }
+
+              class BookmarksViewModel(private val bookmarkDao: BookmarkDao) : ViewModel() {
+                private val internalState = MutableStateFlow(BookmarksState())
+                val state = internalState.asStateFlow()
+
+                init {
+                  viewModelScope.launch(Dispatchers.IO) {
+                    bookmarkDao.getAllBookmarks().collect { bookmarks ->
+                      internalState.update { current ->
+                        current.copy(
+                          bookmarks = bookmarks.map { it.toStoryItem() }
+                        )
+                      }
+                    }
+                  }
+                }
+
+                fun actions(action: BookmarksAction) {
+                  when (action) {
+                    is BookmarksAction.RemoveBookmark -> {
+                      viewModelScope.launch(Dispatchers.IO) {
+                        bookmarkDao.deleteBookmark(action.storyItem.toLocalBookmark())
+                      }
+                    }
+                  }
+                }
+
+                @Suppress("UNCHECKED_CAST")
+                class Factory(private val bookmarkDao: BookmarkDao) : ViewModelProvider.Factory {
+                  override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return BookmarksViewModel(bookmarkDao) as T
+                  }
+                }
+              }
+
+              fun StoryItem.Content.toLocalBookmark(): LocalBookmark {
+                return LocalBookmark(
+                  id = id,
+                  title = title,
+                  author = author,
+                  score = score,
+                  commentCount = commentCount,
+                  timestamp = epochTimestamp,
+                  bookmarked = true,
+                  url = url
+                )
+              }
+
+              fun LocalBookmark.toStoryItem(): StoryItem.Content {
+                return StoryItem.Content(
+                  id = this.id,
+                  title = this.title,
+                  author = this.author,
+                  score = this.score,
+                  commentCount = this.commentCount,
+                  bookmarked = true,
+                  url = this.url,
+                  epochTimestamp = this.timestamp,
+                  timeLabel = relativeTimeStamp(this.timestamp)
+                )
+              }
+            KOTLIN
+
+            expected_contents = <<~KOTLIN.strip
+              package com.emergetools.hackernews.features.bookmarks
+
+              import androidx.lifecycle.ViewModel
+              import androidx.lifecycle.ViewModelProvider
+              import androidx.lifecycle.viewModelScope
+              import com.emergetools.hackernews.data.local.BookmarkDao
+              import com.emergetools.hackernews.data.local.LocalBookmark
+              import com.emergetools.hackernews.data.relativeTimeStamp
+              import com.emergetools.hackernews.features.comments.CommentsDestinations
+              import com.emergetools.hackernews.features.stories.StoriesDestinations
+              import com.emergetools.hackernews.features.stories.StoryItem
+              import kotlinx.coroutines.Dispatchers
+              import kotlinx.coroutines.flow.MutableStateFlow
+              import kotlinx.coroutines.flow.asStateFlow
+              import kotlinx.coroutines.flow.update
+              import kotlinx.coroutines.launch
+
+              data class BookmarksState(
+                val bookmarks: List<StoryItem> = emptyList()
+              )
+
+              sealed interface BookmarksAction {
+                data class RemoveBookmark(val storyItem: StoryItem.Content) : BookmarksAction
+              }
+
+              sealed interface BookmarksNavigation {
+                data class GoToStory(val closeup: StoriesDestinations.Closeup) : BookmarksNavigation
+                data class GoToComments(val comments: CommentsDestinations.Comments) : BookmarksNavigation
+              }
+
+              fun StoryItem.Content.toLocalBookmark(): LocalBookmark {
+                return LocalBookmark(
+                  id = id,
+                  title = title,
+                  author = author,
+                  score = score,
+                  commentCount = commentCount,
+                  timestamp = epochTimestamp,
+                  bookmarked = true,
+                  url = url
+                )
+              }
+
+              fun LocalBookmark.toStoryItem(): StoryItem.Content {
+                return StoryItem.Content(
+                  id = this.id,
+                  title = this.title,
+                  author = this.author,
+                  score = this.score,
+                  commentCount = this.commentCount,
+                  bookmarked = true,
+                  url = this.url,
+                  epochTimestamp = this.timestamp,
+                  timeLabel = relativeTimeStamp(this.timestamp)
+                )
+              }
+            KOTLIN
+
+            updated_contents = @parser.delete_type(
+              file_contents: file_contents,
+              type_name: 'BookmarksViewModel'
+            )
+            assert_equal expected_contents, updated_contents
+          end
+        end
+
+        describe 'find_usages' do
+          def test_finds_sealed_interface_usages
+            file_contents = <<~KOTLIN
+              package com.emergetools.hackernews.features.bookmarks
+
+              import androidx.lifecycle.ViewModel
+              import androidx.lifecycle.ViewModelProvider
+              import androidx.lifecycle.viewModelScope
+              import com.emergetools.hackernews.data.local.BookmarkDao
+              import com.emergetools.hackernews.data.local.LocalBookmark
+              import com.emergetools.hackernews.data.relativeTimeStamp
+              import com.emergetools.hackernews.features.comments.CommentsDestinations
+              import com.emergetools.hackernews.features.stories.StoriesDestinations
+              import com.emergetools.hackernews.features.stories.StoryItem
+              import kotlinx.coroutines.Dispatchers
+              import kotlinx.coroutines.flow.MutableStateFlow
+              import kotlinx.coroutines.flow.asStateFlow
+              import kotlinx.coroutines.flow.update
+              import kotlinx.coroutines.launch
+
+              data class BookmarksState(
+                val bookmarks: List<StoryItem> = emptyList()
+              )
+
+              sealed interface BookmarksAction {
+                data class RemoveBookmark(val storyItem: StoryItem.Content) : BookmarksAction
+              }
+
+              sealed interface BookmarksNavigation {
+                data class GoToStory(val closeup: StoriesDestinations.Closeup) : BookmarksNavigation
+                data class GoToComments(val comments: CommentsDestinations.Comments) : BookmarksNavigation
+              }
+
+              class BookmarksViewModel(private val bookmarkDao: BookmarkDao) : ViewModel() {
+                private val internalState = MutableStateFlow(BookmarksState())
+                val state = internalState.asStateFlow()
+
+                init {
+                  viewModelScope.launch(Dispatchers.IO) {
+                    bookmarkDao.getAllBookmarks().collect { bookmarks ->
+                      internalState.update { current ->
+                        current.copy(
+                          bookmarks = bookmarks.map { it.toStoryItem() }
+                        )
+                      }
+                    }
+                  }
+                }
+
+                fun actions(action: BookmarksAction) {
+                  when (action) {
+                    is BookmarksAction.RemoveBookmark -> {
+                      viewModelScope.launch(Dispatchers.IO) {
+                        bookmarkDao.deleteBookmark(action.storyItem.toLocalBookmark())
+                      }
+                    }
+                  }
+                }
+
+                @Suppress("UNCHECKED_CAST")
+                class Factory(private val bookmarkDao: BookmarkDao) : ViewModelProvider.Factory {
+                  override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return BookmarksViewModel(bookmarkDao) as T
+                  }
+                }
+              }
+
+              fun StoryItem.Content.toLocalBookmark(): LocalBookmark {
+                return LocalBookmark(
+                  id = id,
+                  title = title,
+                  author = author,
+                  score = score,
+                  commentCount = commentCount,
+                  timestamp = epochTimestamp,
+                  bookmarked = true,
+                  url = url
+                )
+              }
+
+              fun LocalBookmark.toStoryItem(): StoryItem.Content {
+                return StoryItem.Content(
+                  id = this.id,
+                  title = this.title,
+                  author = this.author,
+                  score = this.score,
+                  commentCount = this.commentCount,
+                  bookmarked = true,
+                  url = this.url,
+                  epochTimestamp = this.timestamp,
+                  timeLabel = relativeTimeStamp(this.timestamp)
+                )
+              }
+            KOTLIN
+
+            found_usages = @parser.find_usages(
+              file_contents: file_contents,
+              type_name: 'BookmarksAction'
+            )
+
+            expected_usages = [
+              { line: 21, usage_type: 'declaration' },
+              { line: 22, usage_type: 'identifier' },
+              { line: 46, usage_type: 'identifier' },
+              { line: 48, usage_type: 'identifier' }
+            ]
+
+            assert_equal expected_usages, found_usages
+          end
+        end
+      end
+      describe 'Java' do
+        def setup
+          @language = 'java'
+          @parser = AstParser.new(@language)
+        end
+      end
     end
   end
 end
