@@ -842,6 +842,399 @@ module Emerge
           @language = 'java'
           @parser = AstParser.new(@language)
         end
+
+        describe 'delete_type' do
+          def test_removes_class_from_java_file
+            file_contents = <<~JAVA.strip
+              import java.util.*;
+
+              public interface Repository<T> {
+                  void add(T item);
+                  T get(int id);
+                  void remove(int id);
+              }
+
+              public interface Printable {
+                  void print();
+
+                  default void printWithHeader() {
+                      System.out.println("=== Start of Print ===");
+                      print();
+                      System.out.println("=== End of Print ===");
+                  }
+              }
+
+              public abstract class AbstractService implements Printable {
+                  protected String serviceName;
+
+                  public AbstractService(String serviceName) {
+                      this.serviceName = serviceName;
+                  }
+
+                  public abstract void executeService();
+              }
+
+              public class UserService extends AbstractService implements Repository<UserService.User> {
+                  private Map<Integer, User> userMap = new HashMap<>();
+
+                  public UserService(String serviceName) {
+                      super(serviceName);
+                  }
+
+                  @Override
+                  public void add(User user) {
+                      userMap.put(user.getId(), user);
+                      System.out.println("Added user: " + user.getName());
+                  }
+
+                  @Override
+                  public User get(int id) {
+                      return userMap.get(id);
+                  }
+
+                  @Override
+                  public void remove(int id) {
+                      User removed = userMap.remove(id);
+                      if (removed != null) {
+                          System.out.println("Removed user: " + removed.getName());
+                      } else {
+                          System.out.println("User with ID " + id + " does not exist.");
+                      }
+                  }
+
+                  @Override
+                  public void executeService() {
+                      System.out.println("Executing service: " + serviceName);
+                  }
+
+                  @Override
+                  public void print() {
+                      System.out.println("UserService: " + serviceName + ", Users count: " + userMap.size());
+                  }
+
+                  public static class User {
+                      private int id;
+                      private String name;
+
+                      public User(int id, String name) {
+                          this.id = id;
+                          this.name = name;
+                      }
+
+                      public int getId() { return id; }
+                      public String getName() { return name; }
+                  }
+              }
+
+              public class ProductRepository implements Repository<ProductRepository.Product> {
+                  private List<Product> products = new ArrayList<>();
+
+                  @Override
+                  public void add(Product product) {
+                      products.add(product);
+                      System.out.println("Added product: " + product.getProductName());
+                  }
+
+                  @Override
+                  public Product get(int id) {
+                      return products.stream()
+                                    .filter(p -> p.getProductId() == id)
+                                    .findFirst()
+                                    .orElse(null);
+                  }
+
+                  @Override
+                  public void remove(int id) {
+                      products.removeIf(p -> p.getProductId() == id);
+                      System.out.println("Removed product with ID: " + id);
+                  }
+
+                  public static class Product {
+                      private int productId;
+                      private String productName;
+
+                      public Product(int id, String name) {
+                          this.productId = id;
+                          this.productName = name;
+                      }
+
+                      public int getProductId() { return productId; }
+                      public String getProductName() { return productName; }
+                  }
+              }
+
+              public class Main {
+                  public static void main(String[] args) {
+                      UserService userService = new UserService("User Management Service");
+                      userService.add(new UserService.User(1, "Alice"));
+                      userService.add(new UserService.User(2, "Bob"));
+                      userService.printWithHeader();
+                      userService.executeService();
+
+                      ProductRepository productRepo = new ProductRepository();
+                      productRepo.add(new ProductRepository.Product(101, "Laptop"));
+                      productRepo.add(new ProductRepository.Product(102, "Smartphone"));
+                      productRepo.remove(101);
+                  }
+              }
+            JAVA
+
+            expected_contents = <<~JAVA.strip
+              import java.util.*;
+
+              public interface Repository<T> {
+                  void add(T item);
+                  T get(int id);
+                  void remove(int id);
+              }
+
+              public interface Printable {
+                  void print();
+
+                  default void printWithHeader() {
+                      System.out.println("=== Start of Print ===");
+                      print();
+                      System.out.println("=== End of Print ===");
+                  }
+              }
+
+              public abstract class AbstractService implements Printable {
+                  protected String serviceName;
+
+                  public AbstractService(String serviceName) {
+                      this.serviceName = serviceName;
+                  }
+
+                  public abstract void executeService();
+              }
+
+              public class UserService extends AbstractService implements Repository<UserService.User> {
+                  private Map<Integer, User> userMap = new HashMap<>();
+
+                  public UserService(String serviceName) {
+                      super(serviceName);
+                  }
+
+                  @Override
+                  public void add(User user) {
+                      userMap.put(user.getId(), user);
+                      System.out.println("Added user: " + user.getName());
+                  }
+
+                  @Override
+                  public User get(int id) {
+                      return userMap.get(id);
+                  }
+
+                  @Override
+                  public void remove(int id) {
+                      User removed = userMap.remove(id);
+                      if (removed != null) {
+                          System.out.println("Removed user: " + removed.getName());
+                      } else {
+                          System.out.println("User with ID " + id + " does not exist.");
+                      }
+                  }
+
+                  @Override
+                  public void executeService() {
+                      System.out.println("Executing service: " + serviceName);
+                  }
+
+                  @Override
+                  public void print() {
+                      System.out.println("UserService: " + serviceName + ", Users count: " + userMap.size());
+                  }
+
+                  public static class User {
+                      private int id;
+                      private String name;
+
+                      public User(int id, String name) {
+                          this.id = id;
+                          this.name = name;
+                      }
+
+                      public int getId() { return id; }
+                      public String getName() { return name; }
+                  }
+              }
+
+              public class Main {
+                  public static void main(String[] args) {
+                      UserService userService = new UserService("User Management Service");
+                      userService.add(new UserService.User(1, "Alice"));
+                      userService.add(new UserService.User(2, "Bob"));
+                      userService.printWithHeader();
+                      userService.executeService();
+
+                      ProductRepository productRepo = new ProductRepository();
+                      productRepo.add(new ProductRepository.Product(101, "Laptop"));
+                      productRepo.add(new ProductRepository.Product(102, "Smartphone"));
+                      productRepo.remove(101);
+                  }
+              }
+            JAVA
+
+            updated_contents = @parser.delete_type(
+              file_contents: file_contents,
+              type_name: 'ProductRepository'
+            )
+            assert_equal expected_contents, updated_contents
+          end
+        end
+
+        describe 'find_usages' do
+          def test_finds_class_usages
+            file_contents = <<~JAVA.strip
+              import java.util.*;
+
+              public interface Repository<T> {
+                  void add(T item);
+                  T get(int id);
+                  void remove(int id);
+              }
+
+              public interface Printable {
+                  void print();
+
+                  default void printWithHeader() {
+                      System.out.println("=== Start of Print ===");
+                      print();
+                      System.out.println("=== End of Print ===");
+                  }
+              }
+
+              public abstract class AbstractService implements Printable {
+                  protected String serviceName;
+
+                  public AbstractService(String serviceName) {
+                      this.serviceName = serviceName;
+                  }
+
+                  public abstract void executeService();
+              }
+
+              public class UserService extends AbstractService implements Repository<UserService.User> {
+                  private Map<Integer, User> userMap = new HashMap<>();
+
+                  public UserService(String serviceName) {
+                      super(serviceName);
+                  }
+
+                  @Override
+                  public void add(User user) {
+                      userMap.put(user.getId(), user);
+                      System.out.println("Added user: " + user.getName());
+                  }
+
+                  @Override
+                  public User get(int id) {
+                      return userMap.get(id);
+                  }
+
+                  @Override
+                  public void remove(int id) {
+                      User removed = userMap.remove(id);
+                      if (removed != null) {
+                          System.out.println("Removed user: " + removed.getName());
+                      } else {
+                          System.out.println("User with ID " + id + " does not exist.");
+                      }
+                  }
+
+                  @Override
+                  public void executeService() {
+                      System.out.println("Executing service: " + serviceName);
+                  }
+
+                  @Override
+                  public void print() {
+                      System.out.println("UserService: " + serviceName + ", Users count: " + userMap.size());
+                  }
+
+                  public static class User {
+                      private int id;
+                      private String name;
+
+                      public User(int id, String name) {
+                          this.id = id;
+                          this.name = name;
+                      }
+
+                      public int getId() { return id; }
+                      public String getName() { return name; }
+                  }
+              }
+
+              public class ProductRepository implements Repository<ProductRepository.Product> {
+                  private List<Product> products = new ArrayList<>();
+
+                  @Override
+                  public void add(Product product) {
+                      products.add(product);
+                      System.out.println("Added product: " + product.getProductName());
+                  }
+
+                  @Override
+                  public Product get(int id) {
+                      return products.stream()
+                                    .filter(p -> p.getProductId() == id)
+                                    .findFirst()
+                                    .orElse(null);
+                  }
+
+                  @Override
+                  public void remove(int id) {
+                      products.removeIf(p -> p.getProductId() == id);
+                      System.out.println("Removed product with ID: " + id);
+                  }
+
+                  public static class Product {
+                      private int productId;
+                      private String productName;
+
+                      public Product(int id, String name) {
+                          this.productId = id;
+                          this.productName = name;
+                      }
+
+                      public int getProductId() { return productId; }
+                      public String getProductName() { return productName; }
+                  }
+              }
+
+              public class Main {
+                  public static void main(String[] args) {
+                      UserService userService = new UserService("User Management Service");
+                      userService.add(new UserService.User(1, "Alice"));
+                      userService.add(new UserService.User(2, "Bob"));
+                      userService.printWithHeader();
+                      userService.executeService();
+
+                      ProductRepository productRepo = new ProductRepository();
+                      productRepo.add(new ProductRepository.Product(101, "Laptop"));
+                      productRepo.add(new ProductRepository.Product(102, "Smartphone"));
+                      productRepo.remove(101);
+                  }
+              }
+            JAVA
+
+            found_usages = @parser.find_usages(
+              file_contents: file_contents,
+              type_name: 'ProductRepository'
+            )
+            expected_usages = [
+              { line: 80, usage_type: 'declaration' },
+              { line: 125, usage_type: 'identifier' },
+              { line: 80, usage_type: 'identifier' },
+              { line: 125, usage_type: 'identifier' },
+              { line: 126, usage_type: 'identifier' },
+              { line: 127, usage_type: 'identifier' },
+            ]
+            assert_equal expected_usages, found_usages
+          end
+        end
       end
     end
   end
