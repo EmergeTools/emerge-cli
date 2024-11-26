@@ -1,5 +1,4 @@
 require_relative './commands/global_options'
-require_relative './commands/reaper/reaper'
 require_relative './commands/upload/snapshots/snapshots'
 require_relative './commands/upload/snapshots/client_libraries/swift_snapshot_testing'
 require_relative './commands/upload/snapshots/client_libraries/paparazzi'
