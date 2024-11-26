@@ -2,6 +2,8 @@ require 'tree_sitter'
 
 module Emerge
   module Reaper
+    # Parses the AST of a given file using Tree Sitter and allows us to find usages or delete types.
+    # This does have a lot of limitations since it only looks at a single file at a time, but can get us most of the way there.
     class AstParser
       DECLARATION_NODE_TYPES = {
         'swift' => %i[class_declaration protocol_declaration],
@@ -40,6 +42,9 @@ module Emerge
         end
       end
 
+      # Deletes a type from the given file contents.
+      # Returns the modified file contents if successful, otherwise nil.
+      # TODO(telkins): Look into the tree-sitter cursor API to see if it simplifies this.
       def delete_type(file_contents:, type_name:)
         @current_file_contents = file_contents
         tree = @parser.parse_string(nil, file_contents)
@@ -82,6 +87,8 @@ module Emerge
         modified_source
       end
 
+      # Finds all usages of a given type in a file.
+      # TODO(telkins): Look into the tree-sitter cursor API to see if it simplifies this.
       def find_usages(file_contents:, type_name:)
         @current_file_contents = file_contents
         tree = @parser.parse_string(nil, file_contents)
@@ -136,6 +143,8 @@ module Emerge
         end
       end
 
+      # Reaper expects a fully qualified type name, so we need to extract it from the AST.
+      # E.g. `MyModule.MyClass`
       def fully_qualified_type_name(node)
         class_name = node_text(node)
         current_node = node

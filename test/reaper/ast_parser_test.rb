@@ -1230,7 +1230,7 @@ module Emerge
               { line: 80, usage_type: 'identifier' },
               { line: 125, usage_type: 'identifier' },
               { line: 126, usage_type: 'identifier' },
-              { line: 127, usage_type: 'identifier' },
+              { line: 127, usage_type: 'identifier' }
             ]
             assert_equal expected_usages, found_usages
           end
