@@ -115,7 +115,7 @@ module Emerge
         end_position = node.end_point.row
         lines_to_remove << { start: start_position, end: end_position }
 
-        # Remove comments before class declaration
+        # Remove comments preceding the class declaration
         predecessor = node.prev_named_sibling
         return unless predecessor && predecessor.type == :comment
         lines_to_remove << { start: predecessor.start_point.row, end: predecessor.end_point.row }
