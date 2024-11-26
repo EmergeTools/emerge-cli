@@ -3,6 +3,14 @@ require 'test_helper'
 module Emerge
   module Reaper
     class AstParserTest < Minitest::Test
+      def run_test?
+        RUBY_PLATFORM.include?('darwin') && RUBY_PLATFORM.include?('arm64')
+      end
+
+      def setup
+        skip "Skipping tests on non-darwin arm64 platform" unless run_test?
+      end
+
       describe 'Swift' do
         def setup
           @language = 'swift'
