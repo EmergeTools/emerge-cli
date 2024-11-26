@@ -478,6 +478,84 @@ module Emerge
 
             assert_equal expected_usages, found_usages
           end
+
+          def test_finds_usages_of_nested_class_inside_enum
+            file_contents = <<~SWIFT.strip
+              //
+              //  EnumNamespace.swift
+              //  HackerNews
+              //
+              //  Created by Trevor Elkins on 4/5/24.
+              //
+
+              import Foundation
+
+              enum TestNamespace {}
+
+              // TestNamespace comment
+              extension TestNamespace {
+
+                // NestedClass comment
+                class NestedClass {
+                  // LogBlah comment
+                  func logBlah() {
+                    print("Hello world")
+                  }
+                }
+
+              }
+            SWIFT
+
+            found_usages = @parser.find_usages(
+              file_contents: file_contents,
+              type_name: 'TestNamespace.NestedClass'
+            )
+
+            expected_usages = [
+              { line: 15, usage_type: 'declaration' }
+            ]
+
+            assert_equal expected_usages, found_usages
+          end
+
+          def test_finds_usages_of_nested_class_inside_struct
+            file_contents = <<~SWIFT.strip
+              //
+              //  EnumNamespace.swift
+              //  HackerNews
+              //
+              //  Created by Trevor Elkins on 4/5/24.
+              //
+
+              import Foundation
+
+              struct TestNamespace {}
+
+              // TestNamespace comment
+              extension TestNamespace {
+
+                // NestedClass comment
+                class NestedClass {
+                  // LogBlah comment
+                  func logBlah() {
+                    print("Hello world")
+                  }
+                }
+
+              }
+            SWIFT
+
+            found_usages = @parser.find_usages(
+              file_contents: file_contents,
+              type_name: 'TestNamespace.NestedClass'
+            )
+
+            expected_usages = [
+              { line: 15, usage_type: 'declaration' }
+            ]
+
+            assert_equal expected_usages, found_usages
+          end
         end
       end
     end
