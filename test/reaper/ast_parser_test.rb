@@ -414,71 +414,71 @@ module Emerge
           end
         end
 
-        # describe 'find_usages' do
-        #   def test_finds_usages_of_protocol
-        #     file_contents = <<~SWIFT
-        #       // Test file
-        #       struct MyStruct { }
-        #
-        #       protocol MyProtocol { }
-        #
-        #       extension MyStruct: MyProtocol { }
-        #     SWIFT
-        #
-        #     found_usages = @parser.find_usages(
-        #       file_contents: file_contents,
-        #       type_name: 'MyProtocol'
-        #     )
-        #
-        #     expected_usages = [
-        #       { line: 3, usage_type: 'declaration' },
-        #       { line: 5, usage_type: 'identifier' }
-        #     ]
-        #
-        #     assert_equal expected_usages, found_usages
-        #   end
-        #
-        #   def test_finds_usages_of_class
-        #     file_contents = <<~SWIFT
-        #       //
-        #       //  HackerNewsAPI.swift
-        #       //  Hacker News
-        #       //
-        #       //  Created by Trevor Elkins on 6/20/23.
-        #       //
-        #
-        #       import Foundation
-        #
-        #       class HNApi {
-        #         init() {}
-        #
-        #         func fetchTopStories() async -> [Story] {
-        #           if Flags.isEnabled(.networkDebugger) {
-        #             NetworkDebugger.printStats(for: response)
-        #           }
-        #         }
-        #
-        #         func fetchItems(ids: [Int64]) async -> [HNItem] {
-        #           if Flags.isEnabled(.networkDebugger) {
-        #             NetworkDebugger.printStats(for: response)
-        #           }
-        #         }
-        #       }
-        #     SWIFT
-        #
-        #     found_usages = @parser.find_usages(
-        #       file_contents: file_contents,
-        #       type_name: 'NetworkDebugger'
-        #     )
-        #
-        #     expected_usages = [
-        #       { line: 13, usage_type: 'identifier' },
-        #       { line: 19, usage_type: 'identifier' }
-        #     ]
-        #
-        #     assert_equal expected_usages, found_usages
-        #   end
-        # end
+        describe 'find_usages' do
+          def test_finds_usages_of_protocol
+            file_contents = <<~SWIFT
+              // Test file
+              struct MyStruct { }
+
+              protocol MyProtocol { }
+
+              extension MyStruct: MyProtocol { }
+            SWIFT
+
+            found_usages = @parser.find_usages(
+              file_contents: file_contents,
+              type_name: 'MyProtocol'
+            )
+
+            expected_usages = [
+              { line: 3, usage_type: 'declaration' },
+              { line: 5, usage_type: 'identifier' }
+            ]
+
+            assert_equal expected_usages, found_usages
+          end
+
+          def test_finds_usages_of_class
+            file_contents = <<~SWIFT
+              //
+              //  HackerNewsAPI.swift
+              //  Hacker News
+              //
+              //  Created by Trevor Elkins on 6/20/23.
+              //
+
+              import Foundation
+
+              class HNApi {
+                init() {}
+
+                func fetchTopStories() async -> [Story] {
+                  if Flags.isEnabled(.networkDebugger) {
+                    NetworkDebugger.printStats(for: response)
+                  }
+                }
+
+                func fetchItems(ids: [Int64]) async -> [HNItem] {
+                  if Flags.isEnabled(.networkDebugger) {
+                    NetworkDebugger.printStats(for: response)
+                  }
+                }
+              }
+            SWIFT
+
+            found_usages = @parser.find_usages(
+              file_contents: file_contents,
+              type_name: 'NetworkDebugger'
+            )
+
+            expected_usages = [
+              { line: 14, usage_type: 'identifier' },
+              { line: 20, usage_type: 'identifier' }
+            ]
+
+            assert_equal expected_usages, found_usages
+          end
+        end
       end
     end
   end

@@ -91,14 +91,15 @@ module Emerge
 
         while (node = nodes_to_process.shift)
           identifier_type = identifier_node_types.include?(node.type)
-          declaration_type = declaration_node_types.include?(node.parent&.type)
-
-          if declaration_type
-            if fully_qualified_type_name(node) == type_name
-              usages << { line: node.start_point.row, usage_type: 'declaration' }
-            end
-          elsif identifier_type
-            usages << { line: node.start_point.row, usage_type: 'identifier' } if node_text(node) == type_name
+          declaration_type = if node == tree.root_node
+                               false
+                             else
+                               declaration_node_types.include?(node.parent&.type)
+                             end
+          if declaration_type && fully_qualified_type_name(node) == type_name
+            usages << { line: node.start_point.row, usage_type: 'declaration' }
+          elsif identifier_type && node_text(node) == type_name
+            usages << { line: node.start_point.row, usage_type: 'identifier' }
           end
 
           node.each { |child| nodes_to_process.push(child) }
