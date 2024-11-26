@@ -56,7 +56,7 @@ module Emerge
           end
 
           if extension?(node)
-            user_type_nodes = node.children.select { |n| n.type == 'user_type' }
+            user_type_nodes = node.select { |n| n.type == :user_type }
             if user_type_nodes.length >= 1 && fully_qualified_type_name(user_type_nodes[0]) == type_name
               remove_node(node, lines_to_remove)
             end
@@ -69,11 +69,10 @@ module Emerge
         lines_to_remove.each do |range|
           (range[:start]..range[:end]).each { |i| lines[i] = nil }
 
-          # Remove extra newline after class declaration
-          next unless range[:end] + 1 < lines.length &&
-                      lines[range[:end] + 1] &&
-                      lines[range[:end] + 1].match?(/^\s*$/)
-          lines[range[:end] + 1] = nil
+          # Remove extra newline after class declaration, but only if it's blank
+          if range[:end] + 1 < lines.length && !lines[range[:end] + 1].nil? && lines[range[:end] + 1].match?(/^\s*$/)
+            lines[range[:end] + 1] = nil
+          end
         end
 
         modified_source = lines.compact.join("\n")
@@ -92,14 +91,14 @@ module Emerge
 
         while (node = nodes_to_process.shift)
           identifier_type = identifier_node_types.include?(node.type)
-          declaration_type = declaration_node_types.include?(node.parent&.type.to_s)
+          declaration_type = declaration_node_types.include?(node.parent&.type)
 
           if declaration_type
             if fully_qualified_type_name(node) == type_name
-              usages << { line: node.start_position.row, usage_type: 'declaration' }
+              usages << { line: node.start_point.row, usage_type: 'declaration' }
             end
           elsif identifier_type
-            usages << { line: node.start_position.row, usage_type: 'identifier' } if node_text(node) == type_name
+            usages << { line: node.start_point.row, usage_type: 'identifier' } if node_text(node) == type_name
           end
 
           node.each { |child| nodes_to_process.push(child) }
@@ -111,31 +110,27 @@ module Emerge
       private
 
       def remove_node(node, lines_to_remove)
-        start_position = node.start_position.row
-        end_position = node.end_position.row
+        start_position = node.start_point.row
+        end_position = node.end_point.row
         lines_to_remove << { start: start_position, end: end_position }
 
         # Remove comments before class declaration
-        predecessor = node.previous_named_sibling
-        return unless predecessor && predecessor.type == 'comment'
-        lines_to_remove << { start: predecessor.start_position.row, end: predecessor.end_position.row }
+        predecessor = node.prev_named_sibling
+        return unless predecessor && predecessor.type == :comment
+        lines_to_remove << { start: predecessor.start_point.row, end: predecessor.end_point.row }
       end
 
       def extension?(node)
-        if node.type == 'class_declaration'
-          (0...node.child_count).each do |i|
-            child = node.child(i)
-            return true if child.type == 'extension'
-          end
+        if node.type == :class_declaration
+          !node.find { |n| n.type == :extension }.nil?
+        else
+          false
         end
-        false
       end
 
       def only_comments_and_imports?(root)
         types = comment_and_import_types
-        child_count = root.current_node.child_count
-        (0...child_count).all? do |i|
-          child = root.current_node.child(i)
+        root.current_node.all? do |child|
           types.include?(child.type)
         end
       end
@@ -176,20 +171,11 @@ module Emerge
       end
 
       def find_type_identifier(node)
-        identifier_types = identifier_node_types
-        (0...node.named_child_count).each do |i|
-          child = node.named_child(i)
-          return child if identifier_types.include?(child.type)
-        end
-        nil
+        node.find { |n| identifier_node_types.include?(n.type) }
       end
 
       def find_user_type(node)
-        (0...node.named_child_count).each do |i|
-          child = node.named_child(i)
-          return child if child.type == 'user_type'
-        end
-        nil
+        node.find { |n| n.type == :user_type }
       end
 
       def declaration_node_types

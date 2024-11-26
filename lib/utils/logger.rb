@@ -1,5 +1,5 @@
 require 'logger'
-require 'colorize'
+require 'colored2'
 
 module EmergeCLI
   class Logger

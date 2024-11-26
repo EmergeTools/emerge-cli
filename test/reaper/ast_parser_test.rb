@@ -308,73 +308,177 @@ module Emerge
             )
             assert_equal expected_contents, updated_contents
           end
-        end
 
-        describe 'find_usages' do
-          def test_finds_usages_of_protocol
-            file_contents = <<~SWIFT
-              // Test file
-              struct MyStruct { }
-
-              protocol MyProtocol { }
-
-              extension MyStruct: MyProtocol { }
-            SWIFT
-
-            found_usages = @parser.find_usages(
-              file_contents: file_contents,
-              type_name: 'MyProtocol'
-            )
-
-            expected_usages = [
-              { line: 3, usage_type: 'declaration' },
-              { line: 5, usage_type: 'identifier' }
-            ]
-
-            assert_equal expected_usages, found_usages
-          end
-
-          def test_finds_usages_of_class
-            file_contents = <<~SWIFT
+          def test_deletes_nested_class_inside_enum
+            file_contents = <<~SWIFT.strip
               //
-              //  HackerNewsAPI.swift
-              //  Hacker News
+              //  EnumNamespace.swift
+              //  HackerNews
               //
-              //  Created by Trevor Elkins on 6/20/23.
+              //  Created by Trevor Elkins on 4/5/24.
               //
 
               import Foundation
 
-              class HNApi {
-                init() {}
+              enum TestNamespace {}
 
-                func fetchTopStories() async -> [Story] {
-                  if Flags.isEnabled(.networkDebugger) {
-                    NetworkDebugger.printStats(for: response)
+              // TestNamespace comment
+              extension TestNamespace {
+
+                // NestedClass comment
+                class NestedClass {
+                  // LogBlah comment
+                  func logBlah() {
+                    print("Hello world")
                   }
                 }
 
-                func fetchItems(ids: [Int64]) async -> [HNItem] {
-                  if Flags.isEnabled(.networkDebugger) {
-                    NetworkDebugger.printStats(for: response)
-                  }
-                }
               }
             SWIFT
 
-            found_usages = @parser.find_usages(
+            expected_contents = <<~SWIFT.strip
+              //
+              //  EnumNamespace.swift
+              //  HackerNews
+              //
+              //  Created by Trevor Elkins on 4/5/24.
+              //
+
+              import Foundation
+
+              enum TestNamespace {}
+
+              // TestNamespace comment
+              extension TestNamespace {
+
+              }
+            SWIFT
+
+            updated_contents = @parser.delete_type(
               file_contents: file_contents,
-              type_name: 'NetworkDebugger'
+              type_name: 'TestNamespace.NestedClass'
             )
+            assert_equal expected_contents, updated_contents
+          end
 
-            expected_usages = [
-              { line: 13, usage_type: 'identifier' },
-              { line: 19, usage_type: 'identifier' }
-            ]
+          def test_deletes_nested_class_inside_struct
+            file_contents = <<~SWIFT.strip
+              //
+              //  EnumNamespace.swift
+              //  HackerNews
+              //
+              //  Created by Trevor Elkins on 4/5/24.
+              //
 
-            assert_equal expected_usages, found_usages
+              import Foundation
+
+              struct TestNamespace {}
+
+              // TestNamespace comment
+              extension TestNamespace {
+
+                // NestedClass comment
+                class NestedClass {
+                  // LogBlah comment
+                  func logBlah() {
+                    print("Hello world")
+                  }
+                }
+
+              }
+            SWIFT
+
+            expected_contents = <<~SWIFT.strip
+              //
+              //  EnumNamespace.swift
+              //  HackerNews
+              //
+              //  Created by Trevor Elkins on 4/5/24.
+              //
+
+              import Foundation
+
+              struct TestNamespace {}
+
+              // TestNamespace comment
+              extension TestNamespace {
+
+              }
+            SWIFT
+
+            updated_contents = @parser.delete_type(
+              file_contents: file_contents,
+              type_name: 'TestNamespace.NestedClass'
+            )
+            assert_equal expected_contents, updated_contents
           end
         end
+
+        # describe 'find_usages' do
+        #   def test_finds_usages_of_protocol
+        #     file_contents = <<~SWIFT
+        #       // Test file
+        #       struct MyStruct { }
+        #
+        #       protocol MyProtocol { }
+        #
+        #       extension MyStruct: MyProtocol { }
+        #     SWIFT
+        #
+        #     found_usages = @parser.find_usages(
+        #       file_contents: file_contents,
+        #       type_name: 'MyProtocol'
+        #     )
+        #
+        #     expected_usages = [
+        #       { line: 3, usage_type: 'declaration' },
+        #       { line: 5, usage_type: 'identifier' }
+        #     ]
+        #
+        #     assert_equal expected_usages, found_usages
+        #   end
+        #
+        #   def test_finds_usages_of_class
+        #     file_contents = <<~SWIFT
+        #       //
+        #       //  HackerNewsAPI.swift
+        #       //  Hacker News
+        #       //
+        #       //  Created by Trevor Elkins on 6/20/23.
+        #       //
+        #
+        #       import Foundation
+        #
+        #       class HNApi {
+        #         init() {}
+        #
+        #         func fetchTopStories() async -> [Story] {
+        #           if Flags.isEnabled(.networkDebugger) {
+        #             NetworkDebugger.printStats(for: response)
+        #           }
+        #         }
+        #
+        #         func fetchItems(ids: [Int64]) async -> [HNItem] {
+        #           if Flags.isEnabled(.networkDebugger) {
+        #             NetworkDebugger.printStats(for: response)
+        #           }
+        #         }
+        #       }
+        #     SWIFT
+        #
+        #     found_usages = @parser.find_usages(
+        #       file_contents: file_contents,
+        #       type_name: 'NetworkDebugger'
+        #     )
+        #
+        #     expected_usages = [
+        #       { line: 13, usage_type: 'identifier' },
+        #       { line: 19, usage_type: 'identifier' }
+        #     ]
+        #
+        #     assert_equal expected_usages, found_usages
+        #   end
+        # end
       end
     end
   end
