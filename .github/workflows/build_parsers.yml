@@ -74,7 +74,7 @@ jobs:
       - name: Pull latest changes
         if: steps.changes.outputs.changes == 'true'
         run: |
-          git pull --rebase
+          git pull --rebase --autostash
 
       - name: Commit changes
         if: steps.changes.outputs.changes == 'true'
