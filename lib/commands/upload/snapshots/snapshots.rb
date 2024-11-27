@@ -51,7 +51,7 @@ module EmergeCLI
           success = false
 
           begin
-            api_token = @options[:api_token] || ENV['EMERGE_API_TOKEN']
+            api_token = @options[:api_token] || ENV.fetch('EMERGE_API_TOKEN', nil)
             raise 'API token is required' unless api_token
 
             @network ||= EmergeCLI::Network.new(api_token:)
@@ -133,8 +133,8 @@ module EmergeCLI
 
             if seen_files[file_name]
               Logger.warn "Duplicate file name detected: '#{file_name}'. " \
-                        "Previous occurrence: '#{seen_files[file_name]}'. " \
-                        'This upload will overwrite the previous one.'
+                          "Previous occurrence: '#{seen_files[file_name]}'. " \
+                          'This upload will overwrite the previous one.'
             end
             seen_files[file_name] = image_path
           end

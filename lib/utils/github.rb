@@ -4,7 +4,7 @@ module EmergeCLI
     GITHUB_EVENT_PUSH = 'push'.freeze
 
     def self.event_name
-      ENV['GITHUB_EVENT_NAME']
+      ENV.fetch('GITHUB_EVENT_NAME', nil)
     end
 
     def self.supported_github_event?
@@ -22,7 +22,7 @@ module EmergeCLI
 
     def self.sha
       if push?
-        ENV['GITHUB_SHA']
+        ENV.fetch('GITHUB_SHA', nil)
       elsif pull_request?
         github_event_data.dig(:pull_request, :head, :sha)
       end
@@ -55,7 +55,7 @@ module EmergeCLI
 
     def self.github_event_data
       @github_event_data ||= begin
-        github_event_path = ENV['GITHUB_EVENT_PATH']
+        github_event_path = ENV.fetch('GITHUB_EVENT_PATH', nil)
         Logger.error 'GITHUB_EVENT_PATH is not set' if github_event_path.nil?
 
         Logger.error "File #{github_event_path} doesn't exist" unless File.exist?(github_event_path)

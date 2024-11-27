@@ -39,11 +39,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'tty-table', '~> 0.12.0'
   spec.add_dependency 'xcodeproj', '~> 1.27.0'
 
-  spec.add_development_dependency 'minitest', '~> 5.25.1'
-  spec.add_development_dependency 'minitest-reporters', '~> 1.7.1'
-  spec.add_development_dependency 'pry', '~> 0.15.0'
-  spec.add_development_dependency 'rake', '~> 13.2.1'
-  spec.add_development_dependency 'rspec', '~> 3.13.0'
-  spec.add_development_dependency 'rubocop', '~> 1.68.0'
-  spec.add_development_dependency 'simplecov', '~> 0.22.0'
+  spec.metadata['rubygems_mfa_required'] = 'true'
 end
