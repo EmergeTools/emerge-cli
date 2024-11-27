@@ -54,6 +54,47 @@ module EmergeCLI
           @pagination = data['pagination']
         end
 
+        def class_prefix_stats(min_prefix_length: 2, min_group_size: 2)
+          # Group unseen classes by their prefixes
+          prefix_groups = {}
+
+          # Only process unseen classes
+          unseen_code = dead_code.reject { |item| item['seen'] }
+
+          unseen_code.each do |item|
+            class_name = item['class_name']
+            parts = class_name.split('.')
+
+            # Try different prefix lengths
+            (1..parts.length).each do |length|
+              prefix = parts.take(length).join('.')
+              next if prefix.length < min_prefix_length
+              prefix_groups[prefix] ||= []
+              prefix_groups[prefix] << item
+            end
+          end
+
+          # Filter and sort groups
+          significant_groups = prefix_groups
+            .select { |_, group| group.length >= min_group_size }
+            .sort_by { |_, group| -group.length }
+            .first(10)  # Top 10 most common prefixes
+
+          return "No significant unseen class groupings found." if significant_groups.empty?
+
+          output = ["Unseen Class Prefix Analysis (showing top 10 groups):"]
+
+          significant_groups.each do |prefix, group|
+            output << "\n#{prefix}.* (#{group.length} unseen classes)"
+            output << "  Example classes:"
+            group.first(3).each do |item|
+              output << "  - #{item['class_name']}"
+            end
+          end
+
+          output.join("\n")
+        end
+
         def to_s
           <<~SUMMARY
             Dead Code Analysis Results:
@@ -65,6 +106,8 @@ module EmergeCLI
             - Total User Sessions: #{@counts['user_sessions']}
             - Seen Classes: #{@counts['seen_classes']}
             - Unseen Classes: #{@counts['unseen_classes']}
+
+            #{class_prefix_stats}
 
             Page #{@pagination['currentPage']} of #{@pagination['totalPages']}
           SUMMARY
