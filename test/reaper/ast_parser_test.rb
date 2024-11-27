@@ -1,32 +1,28 @@
 require 'test_helper'
 
-module SkipUnlessAppleSilicon
-  def self.run_test?
-    host_os = RbConfig::CONFIG['host_os']
-    host_cpu = RbConfig::CONFIG['host_cpu']
-    host_os =~ /darwin/ && host_cpu =~ /arm64/
-  end
-
-  def self.included(base)
-    base.before do
-      skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
-    end
-  end
-end
-
 module Emerge
   module Reaper
+    module RunTestHelper
+      def run_test?
+        puts "Running on #{RbConfig::CONFIG['host_os']} #{RbConfig::CONFIG['host_cpu']}"
+        host_os = RbConfig::CONFIG['host_os']
+        host_cpu = RbConfig::CONFIG['host_cpu']
+        host_os =~ /darwin/ && host_cpu =~ /arm64/
+      end
+    end
+
     class AstParserTest < Minitest::Test
       describe 'Swift' do
-        include SkipUnlessAppleSilicon
+        include RunTestHelper
 
-        def setup
-          @language = 'swift'
-          @parser = AstParser.new(@language)
+        before do
+          skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
         end
 
         describe 'delete_type' do
           def test_removes_protocol_from_swift_file
+            language = 'swift'
+            parser = AstParser.new(language)
             file_contents = <<~SWIFT
               //
               //  NetworkDebugger.swift
@@ -61,7 +57,7 @@ module Emerge
               }
             SWIFT
 
-            updated_contents = @parser.delete_type(
+            updated_contents = parser.delete_type(
               file_contents: file_contents,
               type_name: 'NetworkDebugger'
             )
@@ -69,6 +65,8 @@ module Emerge
           end
 
           def test_removes_class_from_swift_file
+            language = 'swift'
+            parser = AstParser.new(language)
             file_contents = <<~SWIFT
               //
               //  NetworkDebugger.swift
@@ -126,7 +124,7 @@ module Emerge
               }
             SWIFT
 
-            updated_contents = @parser.delete_type(
+            updated_contents = parser.delete_type(
               file_contents: file_contents,
               type_name: 'NetworkDebugger'
             )
@@ -134,6 +132,8 @@ module Emerge
           end
 
           def test_removes_class_and_deletes_file
+            language = 'swift'
+            parser = AstParser.new(language)
             file_contents = <<~SWIFT
               //
               //  NetworkDebugger.swift
@@ -172,7 +172,7 @@ module Emerge
               }
             SWIFT
 
-            updated_contents = @parser.delete_type(
+            updated_contents = parser.delete_type(
               file_contents: file_contents,
               type_name: 'NetworkDebugger'
             )
@@ -180,6 +180,8 @@ module Emerge
           end
 
           def test_deletes_nested_class_with_extensions
+            language = 'swift'
+            parser = AstParser.new(language)
             file_contents = <<~SWIFT
               //
               //  AppStateViewModel.swift
@@ -318,7 +320,7 @@ module Emerge
               }
             SWIFT
 
-            updated_contents = @parser.delete_type(
+            updated_contents = parser.delete_type(
               file_contents: file_contents,
               type_name: 'AppViewModel.OnboardingModel'
             )
@@ -326,6 +328,8 @@ module Emerge
           end
 
           def test_deletes_nested_class_inside_enum
+            language = 'swift'
+            parser = AstParser.new(language)
             file_contents = <<~SWIFT.strip
               //
               //  EnumNamespace.swift
@@ -370,7 +374,7 @@ module Emerge
               }
             SWIFT
 
-            updated_contents = @parser.delete_type(
+            updated_contents = parser.delete_type(
               file_contents: file_contents,
               type_name: 'TestNamespace.NestedClass'
             )
@@ -378,6 +382,8 @@ module Emerge
           end
 
           def test_deletes_nested_class_inside_struct
+            language = 'swift'
+            parser = AstParser.new(language)
             file_contents = <<~SWIFT.strip
               //
               //  EnumNamespace.swift
@@ -422,7 +428,7 @@ module Emerge
               }
             SWIFT
 
-            updated_contents = @parser.delete_type(
+            updated_contents = parser.delete_type(
               file_contents: file_contents,
               type_name: 'TestNamespace.NestedClass'
             )
@@ -432,6 +438,8 @@ module Emerge
 
         describe 'find_usages' do
           def test_finds_usages_of_protocol
+            language = 'swift'
+            parser = AstParser.new(language)
             file_contents = <<~SWIFT
               // Test file
               struct MyStruct { }
@@ -441,7 +449,7 @@ module Emerge
               extension MyStruct: MyProtocol { }
             SWIFT
 
-            found_usages = @parser.find_usages(
+            found_usages = parser.find_usages(
               file_contents: file_contents,
               type_name: 'MyProtocol'
             )
@@ -455,6 +463,8 @@ module Emerge
           end
 
           def test_finds_usages_of_class
+            language = 'swift'
+            parser = AstParser.new(language)
             file_contents = <<~SWIFT
               //
               //  HackerNewsAPI.swift
@@ -482,7 +492,7 @@ module Emerge
               }
             SWIFT
 
-            found_usages = @parser.find_usages(
+            found_usages = parser.find_usages(
               file_contents: file_contents,
               type_name: 'NetworkDebugger'
             )
@@ -496,6 +506,8 @@ module Emerge
           end
 
           def test_finds_usages_of_nested_class_inside_enum
+            language = 'swift'
+            parser = AstParser.new(language)
             file_contents = <<~SWIFT.strip
               //
               //  EnumNamespace.swift
@@ -522,7 +534,7 @@ module Emerge
               }
             SWIFT
 
-            found_usages = @parser.find_usages(
+            found_usages = parser.find_usages(
               file_contents: file_contents,
               type_name: 'TestNamespace.NestedClass'
             )
@@ -535,6 +547,8 @@ module Emerge
           end
 
           def test_finds_usages_of_nested_class_inside_struct
+            language = 'swift'
+            parser = AstParser.new(language)
             file_contents = <<~SWIFT.strip
               //
               //  EnumNamespace.swift
@@ -561,7 +575,7 @@ module Emerge
               }
             SWIFT
 
-            found_usages = @parser.find_usages(
+            found_usages = parser.find_usages(
               file_contents: file_contents,
               type_name: 'TestNamespace.NestedClass'
             )
@@ -576,15 +590,16 @@ module Emerge
       end
 
       describe 'Kotlin' do
-        include SkipUnlessAppleSilicon
+        include RunTestHelper
 
-        def setup
-          @language = 'kotlin'
-          @parser = AstParser.new(@language)
+        before do
+          skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
         end
 
         describe 'delete_type' do
           def test_removes_class_from_kotlin_file
+            language = 'kotlin'
+            parser = AstParser.new(language)
             file_contents = <<~KOTLIN.strip
               package com.emergetools.hackernews.features.bookmarks
 
@@ -737,7 +752,7 @@ module Emerge
               }
             KOTLIN
 
-            updated_contents = @parser.delete_type(
+            updated_contents = parser.delete_type(
               file_contents: file_contents,
               type_name: 'BookmarksViewModel'
             )
@@ -747,6 +762,8 @@ module Emerge
 
         describe 'find_usages' do
           def test_finds_sealed_interface_usages
+            language = 'kotlin'
+            parser = AstParser.new(language)
             file_contents = <<~KOTLIN
               package com.emergetools.hackernews.features.bookmarks
 
@@ -840,7 +857,7 @@ module Emerge
               }
             KOTLIN
 
-            found_usages = @parser.find_usages(
+            found_usages = parser.find_usages(
               file_contents: file_contents,
               type_name: 'BookmarksAction'
             )
@@ -858,15 +875,16 @@ module Emerge
       end
 
       describe 'Java' do
-        include SkipUnlessAppleSilicon
+        include RunTestHelper
 
-        def setup
-          @language = 'java'
-          @parser = AstParser.new(@language)
+        before do
+          skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
         end
 
         describe 'delete_type' do
           def test_removes_class_from_java_file
+            language = 'java'
+            parser = AstParser.new(language)
             file_contents = <<~JAVA.strip
               import java.util.*;
 
@@ -1098,7 +1116,7 @@ module Emerge
               }
             JAVA
 
-            updated_contents = @parser.delete_type(
+            updated_contents = parser.delete_type(
               file_contents: file_contents,
               type_name: 'ProductRepository'
             )
@@ -1108,6 +1126,8 @@ module Emerge
 
         describe 'find_usages' do
           def test_finds_class_usages
+            language = 'java'
+            parser = AstParser.new(language)
             file_contents = <<~JAVA.strip
               import java.util.*;
 
@@ -1242,7 +1262,7 @@ module Emerge
               }
             JAVA
 
-            found_usages = @parser.find_usages(
+            found_usages = parser.find_usages(
               file_contents: file_contents,
               type_name: 'ProductRepository'
             )
