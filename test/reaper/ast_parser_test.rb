@@ -16,6 +16,7 @@ module Emerge
 
       describe 'Swift' do
         def setup
+          super
           @language = 'swift'
           @parser = AstParser.new(@language)
         end
@@ -571,6 +572,7 @@ module Emerge
       end
       describe 'Kotlin' do
         def setup
+          super
           @language = 'kotlin'
           @parser = AstParser.new(@language)
         end
@@ -850,6 +852,7 @@ module Emerge
       end
       describe 'Java' do
         def setup
+          super
           @language = 'java'
           @parser = AstParser.new(@language)
         end
