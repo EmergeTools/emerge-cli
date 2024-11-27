@@ -55,11 +55,11 @@ module Emerge
 
         case language
         when 'swift'
-          @parser.language = TreeSitter.lang('swift', parser_path)
+          @parser.language = TreeSitter::Language.load('swift', parser_path)
         when 'kotlin'
-          @parser.language = TreeSitter.lang('kotlin', parser_path)
+          @parser.language = TreeSitter::Language.load('kotlin', parser_path)
         when 'java'
-          @parser.language = TreeSitter.lang('java', parser_path)
+          @parser.language = TreeSitter::Language.load('java', parser_path)
         else
           raise "Unsupported language: #{language}"
         end

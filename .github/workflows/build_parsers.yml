@@ -39,7 +39,8 @@ jobs:
         run: |
           tsdl build
 
-      - name: Rename built parsers to include platform and architecture
+      - name: Determine platform and architecture
+        id: platform_info
         run: |
           # Determine architecture
           arch=$(uname -m)
@@ -57,6 +58,15 @@ jobs:
             platform_name="${{ matrix.platform }}"
           fi
 
+          # Set outputs
+          echo "arch=$arch" >> $GITHUB_OUTPUT
+          echo "platform_name=$platform_name" >> $GITHUB_OUTPUT
+
+      - name: Rename built parsers to include platform and architecture
+        run: |
+          # Use outputs from previous step
+          arch="${{ steps.platform_info.outputs.arch }}"
+          platform_name="${{ steps.platform_info.outputs.platform_name }}"
           platform_arch="${platform_name}-${arch}"
 
           # Rename parser files
@@ -98,7 +108,7 @@ jobs:
       - name: Commit changes
         if: steps.changes.outputs.changes == 'true'
         run: |
-          git commit -m "Build tree-sitter parsers for ${{ matrix.platform }}-${arch}"
+          git commit -m "Build tree-sitter parsers for ${{ steps.platform_info.outputs.platform_name }}-${{ steps.platform_info.outputs.arch }}"
 
       - name: Push changes
         if: steps.changes.outputs.changes == 'true'
