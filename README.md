@@ -14,7 +14,7 @@ gem install emerge
 
 ## API Key
 
-Follow our guide to obtain an [API key](https://docs.emergetools.com/docs/uploading-basics#obtain-an-api-key) for your organization. The API Token is used by the CLI to authenticate with the Emerge API. The CLI will automatically pick up the API key if configured as an `EMERGE_API_TOKEN` environment variable, or you can manually pass it into individual commands.
+Follow our guide to obtain an [API key](https://docs.emergetools.com/docs/uploading-basics#obtain-an-api-key) for your organization. The API Token is used by the CLI to authenticate with the Emerge API. The CLI will automatically pick up the API key if configured as an `EMERGE_API_TOKEN` environment variable, or you can manually pass it into individual commands with the `--api-token` option.
 
 ## Snapshots
 
@@ -90,6 +90,21 @@ emerge upload snapshots \
   --id "com.emerge.awesomeapp.paparazzi" \
   --repo-name "EmergeTools/AwesomeApp" \
   --client-library paparazzi \
+  --project-root /my/awesomeapp/android/repo
+```
+
+### Using with Roborazzi
+
+Snapshots generated via [Roborazzi](https://github.com/takahirom/roborazzi) are natively supported by the CLI by setting `--client-library roborazzi` and a `--project-root` directory. This will scan your project for all images found in `**/build/outputs/roborazzi` directories.
+
+Example:
+
+```shell
+emerge upload snapshots \
+  --name "AwesomeApp Roborazzi" \
+  --id "com.emerge.awesomeapp.roborazzi" \
+  --repo-name "EmergeTools/AwesomeApp" \
+  --client-library roborazzi \
   --project-root /my/awesomeapp/android/repo
 ```
 
