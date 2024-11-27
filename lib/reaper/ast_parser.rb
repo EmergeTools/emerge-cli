@@ -45,7 +45,7 @@ module Emerge
 
       # Deletes a type from the given file contents.
       # Returns the modified file contents if successful, otherwise nil.
-      # TODO(telkins): Look into the tree-sitter cursor API to see if it simplifies this.
+      # TODO(telkins): Look into the tree-sitter query API to see if it simplifies this.
       def delete_type(file_contents:, type_name:)
         @current_file_contents = file_contents
         tree = @parser.parse_string(nil, file_contents)
@@ -89,7 +89,7 @@ module Emerge
       end
 
       # Finds all usages of a given type in a file.
-      # TODO(telkins): Look into the tree-sitter cursor API to see if it simplifies this.
+      # TODO(telkins): Look into the tree-sitter query API to see if it simplifies this.
       def find_usages(file_contents:, type_name:)
         @current_file_contents = file_contents
         tree = @parser.parse_string(nil, file_contents)
