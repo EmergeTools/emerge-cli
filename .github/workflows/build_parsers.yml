@@ -37,7 +37,7 @@ jobs:
 
       - name: Build tree-sitter parsers
         run: |
-          tsdl build --output-dir build_parsers
+          tsdl build --out-dir build_parsers
 
       - name: Determine platform and architecture
         id: platform_info
