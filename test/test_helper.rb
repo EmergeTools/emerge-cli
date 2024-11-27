@@ -1,6 +1,6 @@
 require 'simplecov'
 require 'minitest/autorun'
-require 'minitest/pride' # For colorful output
+require 'minitest/pride'
 require 'minitest/reporters'
 require 'tmpdir'
 require 'fileutils'

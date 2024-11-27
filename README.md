@@ -92,3 +92,9 @@ emerge upload snapshots \
   --client-library paparazzi \
   --project-root /my/awesomeapp/android/repo
 ```
+
+## Building
+
+This depends on [Tree Sitter](https://tree-sitter.github.io/tree-sitter/) for part of its functionality.
+
+In order to parse language grammars for Swift and Kotlin, both of which are third-party language grammars, we also depend on [tsdl](https://github.com/stackmystack/tsdl). This downloads and compiles the language grammars into dylibs for us to use.

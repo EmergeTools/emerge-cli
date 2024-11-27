@@ -8,6 +8,8 @@ require_relative './commands/integrate/fastlane'
 require_relative './commands/config/snapshots/snapshots_ios'
 require_relative './commands/config/orderfiles/orderfiles_ios'
 
+require_relative './reaper/ast_parser'
+
 require_relative './utils/git_info_provider'
 require_relative './utils/git_result'
 require_relative './utils/github'
@@ -18,6 +20,8 @@ require_relative './utils/profiler'
 require_relative './utils/project_detector'
 
 require 'dry/cli'
+require 'pry'
+require 'pry-byebug'
 
 module EmergeCLI
   extend Dry::CLI::Registry
