@@ -81,7 +81,7 @@ module EmergeCLI
         .split("\n")
         .map(&:strip)
         .find { |line| line.start_with?('HEAD branch: ') }
-        &.split(' ')
+        &.split
         &.last
     end
 

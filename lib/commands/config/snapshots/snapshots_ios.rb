@@ -39,8 +39,6 @@ module EmergeCLI
 format KEY=VALUE".freeze
         AVAILABLE_OS_VERSIONS = ['17.2', '17.5', '18.0'].freeze
 
-        def initialize; end
-
         def call(**options)
           @options = options
           before(options)
@@ -204,12 +202,11 @@ format KEY=VALUE".freeze
         end
 
         def get_parsed_previews(previews_exact, previews_regex)
-          excluded = []
-          previews_exact.each do |preview|
-            excluded.push({
-                            'type' => 'exact',
-                            'value' => preview
-                          })
+          excluded = previews_exact.map do |preview|
+            {
+              'type' => 'exact',
+              'value' => preview
+            }
           end
           previews_regex.each do |preview|
             excluded.push({

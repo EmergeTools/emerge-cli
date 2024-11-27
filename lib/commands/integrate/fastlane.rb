@@ -80,7 +80,7 @@ module EmergeCLI
 
           # Add app_size lane if not present
           unless current_content.match?(/^\s*lane\s*:app_size\s*do/)
-            app_size_lane = <<~'RUBY'.gsub(/^/, '  ')
+            app_size_lane = <<~RUBY.gsub(/^/, '  ')
               lane :app_size do
                 # NOTE: If you already have a lane setup to build your app, then you can that instead of this and call emerge() after it.
                 build_app(scheme: ENV["SCHEME_NAME"], export_method: "development")
@@ -92,7 +92,7 @@ module EmergeCLI
 
           # Add snapshots lane if not present
           unless current_content.match?(/^\s*lane\s*:build_upload_emerge_snapshot\s*do/)
-            snapshot_lane = <<~'RUBY'.gsub(/^/, '  ')
+            snapshot_lane = <<~RUBY.gsub(/^/, '  ')
               desc 'Build and upload snapshot build to Emerge Tools'
               lane :build_upload_emerge_snapshot do
                 emerge_snapshot(scheme: ENV["SCHEME_NAME"])

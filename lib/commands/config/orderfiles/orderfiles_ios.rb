@@ -18,8 +18,6 @@ module EmergeCLI
         ORDER_FILE = 'ORDER_FILE'.freeze
         ORDER_FILE_PATH = '$(PROJECT_DIR)/orderfiles/orderfile.txt'.freeze
 
-        def initialize; end
-
         def call(**options)
           @options = options
           before(options)

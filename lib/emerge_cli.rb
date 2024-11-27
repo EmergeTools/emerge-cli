@@ -1,23 +1,23 @@
-require_relative './commands/global_options'
-require_relative './commands/upload/snapshots/snapshots'
-require_relative './commands/upload/snapshots/client_libraries/swift_snapshot_testing'
-require_relative './commands/upload/snapshots/client_libraries/paparazzi'
-require_relative './commands/upload/snapshots/client_libraries/roborazzi'
-require_relative './commands/upload/snapshots/client_libraries/default'
-require_relative './commands/integrate/fastlane'
-require_relative './commands/config/snapshots/snapshots_ios'
-require_relative './commands/config/orderfiles/orderfiles_ios'
+require_relative 'commands/global_options'
+require_relative 'commands/upload/snapshots/snapshots'
+require_relative 'commands/upload/snapshots/client_libraries/swift_snapshot_testing'
+require_relative 'commands/upload/snapshots/client_libraries/paparazzi'
+require_relative 'commands/upload/snapshots/client_libraries/roborazzi'
+require_relative 'commands/upload/snapshots/client_libraries/default'
+require_relative 'commands/integrate/fastlane'
+require_relative 'commands/config/snapshots/snapshots_ios'
+require_relative 'commands/config/orderfiles/orderfiles_ios'
 
-require_relative './reaper/ast_parser'
+require_relative 'reaper/ast_parser'
 
-require_relative './utils/git_info_provider'
-require_relative './utils/git_result'
-require_relative './utils/github'
-require_relative './utils/git'
-require_relative './utils/logger'
-require_relative './utils/network'
-require_relative './utils/profiler'
-require_relative './utils/project_detector'
+require_relative 'utils/git_info_provider'
+require_relative 'utils/git_result'
+require_relative 'utils/github'
+require_relative 'utils/git'
+require_relative 'utils/logger'
+require_relative 'utils/network'
+require_relative 'utils/profiler'
+require_relative 'utils/project_detector'
 
 require 'dry/cli'
 require 'pry'
@@ -41,4 +41,4 @@ module EmergeCLI
 end
 
 # By default the log level is INFO, but can be overridden by the --debug flag
-EmergeCLI::Logger.configure(::Logger::INFO)
+EmergeCLI::Logger.configure(Logger::INFO)

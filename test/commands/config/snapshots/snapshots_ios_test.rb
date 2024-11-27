@@ -9,7 +9,7 @@ module EmergeCLI
         end
 
         def teardown
-          FileUtils.rm_rf('emerge_config.yml') if File.exist?('emerge_config.yml')
+          FileUtils.rm_rf('emerge_config.yml')
         end
 
         def test_raises_error_if_no_clear_and_config_exists

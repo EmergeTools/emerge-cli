@@ -29,9 +29,3 @@ SimpleCov.start do
 end
 
 require_relative '../lib/emerge_cli'
-
-# Global test configuration
-module Minitest
-  class Test
-  end
-end
