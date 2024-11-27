@@ -1,28 +1,28 @@
 require 'test_helper'
 
+module SkipUnlessAppleSilicon
+  def self.run_test?
+    host_os = RbConfig::CONFIG['host_os']
+    host_cpu = RbConfig::CONFIG['host_cpu']
+    host_os =~ /darwin/ && host_cpu =~ /arm64/
+  end
+
+  def self.included(base)
+    base.before do
+      skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
+    end
+  end
+end
+
 module Emerge
   module Reaper
     class AstParserTest < Minitest::Test
-      def run_test?
-        host_os = RbConfig::CONFIG['host_os']
-        host_cpu = RbConfig::CONFIG['host_cpu']
-        host_os =~ /darwin/ && host_cpu =~ /arm64/
-      end
-
-      def setup
-        skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
-        super if defined?(super)
-      end
-
       describe 'Swift' do
+        include SkipUnlessAppleSilicon
+
         def setup
-          super
           @language = 'swift'
           @parser = AstParser.new(@language)
-        end
-
-        before do
-          skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
         end
 
         describe 'delete_type' do
@@ -574,15 +574,13 @@ module Emerge
           end
         end
       end
+
       describe 'Kotlin' do
+        include SkipUnlessAppleSilicon
+
         def setup
-          super
           @language = 'kotlin'
           @parser = AstParser.new(@language)
-        end
-
-        before do
-          skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
         end
 
         describe 'delete_type' do
@@ -858,15 +856,13 @@ module Emerge
           end
         end
       end
+
       describe 'Java' do
+        include SkipUnlessAppleSilicon
+
         def setup
-          super
           @language = 'java'
           @parser = AstParser.new(@language)
-        end
-
-        before do
-          skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
         end
 
         describe 'delete_type' do
