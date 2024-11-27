@@ -44,26 +44,36 @@ jobs:
           # Determine architecture
           arch=$(uname -m)
           # Map architecture names to standard values
-          if [[ "$arch" == "x86_64" ]]; then
+          if [[ "$arch" == "x86_64" || "$arch" == "amd64" ]]; then
             arch="x86_64"
           elif [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
             arch="arm64"
           fi
+
           # For macOS, adjust platform name
           if [[ "${{ matrix.platform }}" == "macos" ]]; then
             platform_name="darwin"
           else
             platform_name="${{ matrix.platform }}"
           fi
+
           platform_arch="${platform_name}-${arch}"
+
           # Rename parser files
           for file in parsers/libtree-sitter-*; do
             if [ -f "$file" ]; then
-              extension="${file##*.}"
-              base="${file%.*}"
-              mv "$file" "${base}-${platform_arch}.${extension}"
+              filename=$(basename "$file")
+              extension="${filename##*.}"
+              base="${filename%.*}"
+
+              # Check if the filename already ends with the platform_arch
+              if [[ "$base" != *"-${platform_arch}" ]]; then
+                new_base="${base}-${platform_arch}"
+                mv "$file" "parsers/${new_base}.${extension}"
+              fi
             fi
           done
+
 
       - name: Configure git
         run: |
