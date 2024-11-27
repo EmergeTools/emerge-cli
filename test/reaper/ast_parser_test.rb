@@ -2,23 +2,8 @@ require 'test_helper'
 
 module Emerge
   module Reaper
-    module RunTestHelper
-      def run_test?
-        puts "Running on #{RbConfig::CONFIG['host_os']} #{RbConfig::CONFIG['host_cpu']}"
-        host_os = RbConfig::CONFIG['host_os']
-        host_cpu = RbConfig::CONFIG['host_cpu']
-        host_os =~ /darwin/ && host_cpu =~ /arm64/
-      end
-    end
-
     class AstParserTest < Minitest::Test
       describe 'Swift' do
-        include RunTestHelper
-
-        before do
-          skip 'These tests only run on Apple Silicon (darwin arm64)' unless run_test?
-        end
-
         describe 'delete_type' do
           def test_removes_protocol_from_swift_file
             language = 'swift'
@@ -590,12 +575,6 @@ module Emerge
       end
 
       describe 'Kotlin' do
-        include RunTestHelper
-
-        before do
-          skip 'These tests only run on Apple Silicon (darwin arm64)' unless run_test?
-        end
-
         describe 'delete_type' do
           def test_removes_class_from_kotlin_file
             language = 'kotlin'
@@ -875,12 +854,6 @@ module Emerge
       end
 
       describe 'Java' do
-        include RunTestHelper
-
-        before do
-          skip 'These tests only run on Apple Silicon (darwin arm64)' unless run_test?
-        end
-
         describe 'delete_type' do
           def test_removes_class_from_java_file
             language = 'java'

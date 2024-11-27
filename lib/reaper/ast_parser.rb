@@ -31,13 +31,35 @@ module Emerge
         @language = language
         @current_file_contents = nil
 
+        platform = case RUBY_PLATFORM
+                   when /darwin/
+                     'darwin'
+                   when /linux/
+                     'linux'
+                   else
+                     raise "Unsupported platform: #{RUBY_PLATFORM}"
+                   end
+
+        arch = case RUBY_PLATFORM
+               when /x86_64|amd64/
+                 'x86_64'
+               when /arm64|aarch64/
+                 'arm64'
+               else
+                 raise "Unsupported architecture: #{RUBY_PLATFORM}"
+               end
+
+        extension = platform == 'darwin' ? 'dylib' : 'so'
+        parser_file = "libtree-sitter-#{language}-#{platform}-#{arch}.#{extension}"
+        parser_path = File.join('parsers', parser_file)
+
         case language
         when 'swift'
-          @parser.language = TreeSitter.lang('swift')
+          @parser.language = TreeSitter::Language.load('swift', parser_path)
         when 'kotlin'
-          @parser.language = TreeSitter.lang('kotlin')
+          @parser.language = TreeSitter::Language.load('kotlin', parser_path)
         when 'java'
-          @parser.language = TreeSitter.lang('java')
+          @parser.language = TreeSitter::Language.load('java', parser_path)
         else
           raise "Unsupported language: #{language}"
         end

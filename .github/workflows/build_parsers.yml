@@ -1,0 +1,143 @@
+name: Build Tree-Sitter Parsers
+
+on:
+  push:
+    branches:
+      - main
+      - telkins/build-dylibs
+    paths:
+      - 'parsers.toml'
+      - '.github/workflows/build_parsers.yml'
+  workflow_dispatch:
+
+jobs:
+  build-parsers:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: macos-latest
+            platform: macos
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install tsdl
+        run: |
+          cargo install tsdl
+
+      - name: Build tree-sitter parsers
+        run: |
+          tsdl build --out-dir build_parsers
+
+      - name: Determine platform and architecture
+        id: platform_info
+        run: |
+          # Determine architecture
+          arch=$(uname -m)
+          # Map architecture names to standard values
+          if [[ "$arch" == "x86_64" || "$arch" == "amd64" ]]; then
+            arch="x86_64"
+          elif [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
+            arch="arm64"
+          fi
+
+          # For macOS, adjust platform name
+          if [[ "${{ matrix.platform }}" == "macos" ]]; then
+            platform_name="darwin"
+          else
+            platform_name="${{ matrix.platform }}"
+          fi
+
+          # Set outputs
+          echo "arch=$arch" >> $GITHUB_OUTPUT
+          echo "platform_name=$platform_name" >> $GITHUB_OUTPUT
+
+      - name: Rename built parsers to include platform and architecture
+        run: |
+          # Use outputs from previous step
+          arch="${{ steps.platform_info.outputs.arch }}"
+          platform_name="${{ steps.platform_info.outputs.platform_name }}"
+          platform_arch="${platform_name}-${arch}"
+
+          echo "Using platform_arch=${platform_arch}"
+
+          # Rename parser files in the temporary directory
+          for file in build_parsers/libtree-sitter-*; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file")
+              extension="${filename##*.}"
+              base="${filename%.*}"
+
+              echo "Processing file $filename"
+
+              # Append platform_arch before the extension
+              new_base="${base}-${platform_arch}"
+              echo "Renaming $file to build_parsers/${new_base}.${extension}"
+              mv "$file" "build_parsers/${new_base}.${extension}"
+            fi
+          done
+
+      - name: Move renamed parsers to parsers directory
+        run: |
+          # Ensure parsers directory exists
+          mkdir -p parsers
+
+          # Move files and overwrite existing ones
+          for file in build_parsers/*; do
+            filename=$(basename "$file")
+            dest_file="parsers/$filename"
+
+            echo "Moving $file to $dest_file"
+            mv -f "$file" "$dest_file"
+          done
+
+      - name: Configure git
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Pull latest changes
+        if: steps.changes.outputs.changes == 'true'
+        run: |
+          git pull --rebase --autostash
+
+      - name: Commit changes
+        if: steps.changes.outputs.changes == 'true'
+        run: |
+          git commit -m "Build tree-sitter parsers for ${{ steps.platform_info.outputs.platform_name }}-${{ steps.platform_info.outputs.arch }}"
+
+      - name: Push changes
+        if: steps.changes.outputs.changes == 'true'
+        run: |
+          max_retries=5
+          retry_count=0
+          until git push || [ $retry_count -eq $max_retries ]; do
+            echo "Push failed, retrying..."
+            git pull --rebase --autostash
+            retry_count=$((retry_count + 1))
+            sleep 5
+          done
+          if [ $retry_count -eq $max_retries ]; then
+            echo "Push failed after $max_retries attempts."
+            exit 1
+          fi
