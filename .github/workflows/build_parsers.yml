@@ -93,4 +93,15 @@ jobs:
       - name: Push changes
         if: steps.changes.outputs.changes == 'true'
         run: |
-          git push
+          max_retries=5
+          retry_count=0
+          until git push || [ $retry_count -eq $max_retries ]; do
+            echo "Push failed, retrying..."
+            git pull --rebase --autostash
+            retry_count=$((retry_count + 1))
+            sleep 5
+          done
+          if [ $retry_count -eq $max_retries ]; then
+            echo "Push failed after $max_retries attempts."
+            exit 1
+          fi
