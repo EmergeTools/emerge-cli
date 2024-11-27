@@ -37,7 +37,7 @@ jobs:
 
       - name: Build tree-sitter parsers
         run: |
-          tsdl build
+          tsdl build --output-dir build_parsers
 
       - name: Determine platform and architecture
         id: platform_info
@@ -69,21 +69,37 @@ jobs:
           platform_name="${{ steps.platform_info.outputs.platform_name }}"
           platform_arch="${platform_name}-${arch}"
 
-          # Rename parser files
-          for file in parsers/libtree-sitter-*; do
+          echo "Using platform_arch=${platform_arch}"
+
+          # Rename parser files in the temporary directory
+          for file in build_parsers/libtree-sitter-*; do
             if [ -f "$file" ]; then
               filename=$(basename "$file")
               extension="${filename##*.}"
               base="${filename%.*}"
 
-              # Check if the filename already ends with the platform_arch
-              if [[ "$base" != *"-${platform_arch}" ]]; then
-                new_base="${base}-${platform_arch}"
-                mv "$file" "parsers/${new_base}.${extension}"
-              fi
+              echo "Processing file $filename"
+
+              # Append platform_arch before the extension
+              new_base="${base}-${platform_arch}"
+              echo "Renaming $file to build_parsers/${new_base}.${extension}"
+              mv "$file" "build_parsers/${new_base}.${extension}"
             fi
           done
 
+      - name: Move renamed parsers to parsers directory
+        run: |
+          # Ensure parsers directory exists
+          mkdir -p parsers
+
+          # Move files and overwrite existing ones
+          for file in build_parsers/*; do
+            filename=$(basename "$file")
+            dest_file="parsers/$filename"
+
+            echo "Moving $file to $dest_file"
+            mv -f "$file" "$dest_file"
+          done
 
       - name: Configure git
         run: |
