@@ -43,7 +43,7 @@ module EmergeCLI
                             when 'ERROR'
                               msg.to_s.red
                             when 'DEBUG'
-                              msg.to_s.light_blue
+                              msg.to_s.blue
                             else
                               msg.to_s
                             end
