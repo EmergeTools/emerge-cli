@@ -61,7 +61,7 @@ module Emerge
         when 'java'
           @parser.language = TreeSitter::Language.load('java', parser_path)
         else
-          raise "Unsupported language: #{language}"
+          raise "Unsupported language: #{language} "
         end
       end
 
