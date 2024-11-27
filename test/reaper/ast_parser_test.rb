@@ -21,6 +21,10 @@ module Emerge
           @parser = AstParser.new(@language)
         end
 
+        before do
+          skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
+        end
+
         describe 'delete_type' do
           def test_removes_protocol_from_swift_file
             file_contents = <<~SWIFT
@@ -577,6 +581,10 @@ module Emerge
           @parser = AstParser.new(@language)
         end
 
+        before do
+          skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
+        end
+
         describe 'delete_type' do
           def test_removes_class_from_kotlin_file
             file_contents = <<~KOTLIN.strip
@@ -855,6 +863,10 @@ module Emerge
           super
           @language = 'java'
           @parser = AstParser.new(@language)
+        end
+
+        before do
+          skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
         end
 
         describe 'delete_type' do
