@@ -3,7 +3,8 @@ require 'tree_sitter'
 module Emerge
   module Reaper
     # Parses the AST of a given file using Tree Sitter and allows us to find usages or delete types.
-    # This does have a lot of limitations since it only looks at a single file at a time, but can get us most of the way there.
+    # This does have a lot of limitations since it only looks at a single file at a time,
+    # but can get us most of the way there.
     class AstParser
       DECLARATION_NODE_TYPES = {
         'swift' => %i[class_declaration protocol_declaration],

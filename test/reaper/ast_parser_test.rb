@@ -16,7 +16,7 @@ module Emerge
         include RunTestHelper
 
         before do
-          skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
+          skip 'These tests only run on Apple Silicon (darwin arm64)' unless run_test?
         end
 
         describe 'delete_type' do
@@ -593,7 +593,7 @@ module Emerge
         include RunTestHelper
 
         before do
-          skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
+          skip 'These tests only run on Apple Silicon (darwin arm64)' unless run_test?
         end
 
         describe 'delete_type' do
@@ -878,7 +878,7 @@ module Emerge
         include RunTestHelper
 
         before do
-          skip "These tests only run on Apple Silicon (darwin arm64)" unless run_test?
+          skip 'These tests only run on Apple Silicon (darwin arm64)' unless run_test?
         end
 
         describe 'delete_type' do
