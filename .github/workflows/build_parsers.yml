@@ -39,20 +39,29 @@ jobs:
         run: |
           tsdl build
 
-      - name: Rename built parsers to include platform
+      - name: Rename built parsers to include platform and architecture
         run: |
-          for dir in parsers/*; do
-            if [ -d "$dir/src" ]; then
-              lib_dir="$dir/src"
-              cd "$lib_dir"
-              for file in *; do
-                if [ -f "$file" ]; then
-                  extension="${file##*.}"
-                  base="${file%.*}"
-                  mv "$file" "${base}-${{ matrix.platform }}.${extension}"
-                fi
-              done
-              cd - > /dev/null
+          # Determine architecture
+          arch=$(uname -m)
+          # Map architecture names to standard values
+          if [[ "$arch" == "x86_64" ]]; then
+            arch="x86_64"
+          elif [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
+            arch="arm64"
+          fi
+          # For macOS, adjust platform name
+          if [[ "${{ matrix.platform }}" == "macos" ]]; then
+            platform_name="darwin"
+          else
+            platform_name="${{ matrix.platform }}"
+          fi
+          platform_arch="${platform_name}-${arch}"
+          # Rename parser files
+          for file in parsers/libtree-sitter-*; do
+            if [ -f "$file" ]; then
+              extension="${file##*.}"
+              base="${file%.*}"
+              mv "$file" "${base}-${platform_arch}.${extension}"
             fi
           done
 
@@ -79,7 +88,7 @@ jobs:
       - name: Commit changes
         if: steps.changes.outputs.changes == 'true'
         run: |
-          git commit -m "Build tree-sitter parsers for ${{ matrix.platform }} [skip ci]"
+          git commit -m "Build tree-sitter parsers for ${{ matrix.platform }}-${arch} [skip ci]"
 
       - name: Push changes
         if: steps.changes.outputs.changes == 'true'
