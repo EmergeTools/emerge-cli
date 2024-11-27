@@ -21,8 +21,8 @@ module EmergeCLI
       request(:get, path, nil, headers)
     end
 
-    def post(path:, body:, headers: {})
-      request(:post, path, body, headers)
+    def post(path:, body:, headers: {}, query: nil)
+      request(:post, path, body, headers, query)
     end
 
     def put(path:, body:, headers: {})
@@ -35,11 +35,16 @@ module EmergeCLI
 
     private
 
-    def request(method, path, body, custom_headers)
+    def request(method, path, body, custom_headers, query = nil)
       uri = if path.start_with?('http')
               URI.parse(path)
             else
-              URI::HTTPS.build(host: @base_url, path:)
+              query_string = query ? URI.encode_www_form(query) : nil
+              URI::HTTPS.build(
+                host: @base_url,
+                path: path,
+                query: query_string
+              )
             end
       absolute_uri = uri.to_s
 
