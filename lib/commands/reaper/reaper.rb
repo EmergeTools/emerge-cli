@@ -58,8 +58,14 @@ module EmergeCLI
           # Group unseen classes by their prefixes
           prefix_groups = {}
 
-          # Only process unseen classes
-          unseen_code = dead_code.reject { |item| item['seen'] }
+          # Filter and process unseen classes
+          unseen_code = dead_code
+            .select do |item|
+              item['paths'] &&
+              item['paths'].any? &&
+              item['paths'].none? { |path| path.include?('SourcePackages/checkouts') || path.include?('/Pods/') || path.include?('/Carthage/') || path.include?('/Vendor/') }
+            end
+            .reject { |item| item['seen'] }
 
           unseen_code.each do |item|
             class_name = item['class_name']
@@ -78,7 +84,7 @@ module EmergeCLI
           significant_groups = prefix_groups
             .select { |_, group| group.length >= min_group_size }
             .sort_by { |_, group| -group.length }
-            .first(10)  # Top 10 most common prefixes
+            .first(10)
 
           return "No significant unseen class groupings found." if significant_groups.empty?
 
@@ -89,6 +95,9 @@ module EmergeCLI
             output << "  Example classes:"
             group.first(3).each do |item|
               output << "  - #{item['class_name']}"
+              item['paths'].each do |path|
+                output << "    #{path}"
+              end
             end
           end
 
