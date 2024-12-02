@@ -52,7 +52,7 @@ module EmergeCLI
 
           begin
             api_token = @options[:api_token] || ENV.fetch('EMERGE_API_TOKEN', nil)
-            raise 'API token is required' unless api_token
+            raise 'API token is required and cannot be blank' if api_token.nil? || api_token.strip.empty?
 
             @network ||= EmergeCLI::Network.new(api_token:)
             @git_info_provider ||= GitInfoProvider.new
