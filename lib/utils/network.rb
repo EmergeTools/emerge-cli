@@ -9,7 +9,7 @@ module EmergeCLI
     public_constant :EMERGE_API_PROD_URL
 
     RETRY_DELAY = 5
-    MAX_RETRIES = 1
+    MAX_RETRIES = 3
 
     def initialize(api_token:, base_url: EMERGE_API_PROD_URL)
       @base_url = base_url
@@ -62,20 +62,28 @@ module EmergeCLI
 
         response
       rescue StandardError => e
-        # Workaround for an issue where the request is not fully written, haven't determined the root cause yet
-        if e.message.include?('Wrote 0 bytes') && retries < MAX_RETRIES
-          retries += 1
-          Logger.warn "Request failed due to incomplete write. Retrying in #{RETRY_DELAY} seconds..."
-          sleep RETRY_DELAY
+        retries += 1
+        if retries <= MAX_RETRIES
+          delay = RETRY_DELAY * retries
+          error_message = e.message
+          Logger.warn "Request failed (attempt #{retries}/#{MAX_RETRIES}): #{error_message}"
+          Logger.warn "Retrying in #{delay} seconds..."
+
+          @internet.close rescue nil
+          @internet = Async::HTTP::Internet.new
+
+          sleep delay
           retry
         else
-          Logger.error "Request failed: #{absolute_uri} #{e.message}"
+          Logger.error "Request failed after #{MAX_RETRIES} attempts: #{absolute_uri} #{e.message}"
           raise e
         end
       end
     end
 
     def perform_request(method, absolute_uri, headers, body)
+      headers ||= {}
+
       case method
       when :get
         @internet.get(absolute_uri, headers:)
@@ -86,6 +94,11 @@ module EmergeCLI
       else
         raise "Unsupported method: #{method}"
       end
+    rescue NoMethodError => e
+      if e.message.include?('each') && e.backtrace.any? { |line| line.include?('hpack') }
+        raise "HTTP/2 headers error: Headers cannot be nil (#{headers.inspect})"
+      end
+      raise
     end
 
     def truncate_uri(uri, max_length = 100)
