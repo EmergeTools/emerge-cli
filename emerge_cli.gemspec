@@ -2,7 +2,7 @@ require_relative 'lib/version'
 
 Gem::Specification.new do |spec|
   spec.name          = 'emerge'
-  spec.version       = EmergeCli::VERSION
+  spec.version       = EmergeCLI::VERSION
   spec.authors       = ['Emerge Tools']
   spec.email         = ['support@emergetools.com']
 
