@@ -19,6 +19,8 @@ require_relative 'utils/network'
 require_relative 'utils/profiler'
 require_relative 'utils/project_detector'
 
+require_relative 'version'
+
 require 'dry/cli'
 require 'pry'
 require 'pry-byebug'

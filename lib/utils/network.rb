@@ -43,7 +43,10 @@ module EmergeCLI
             end
       absolute_uri = uri.to_s
 
-      headers = { 'X-API-Token' => @api_token }
+      headers = {
+        'X-API-Token' => @api_token,
+        'User-Agent' => "emerge-cli/#{EmergeCLI::VERSION}"
+      }
       headers['Content-Type'] = 'application/json' if method == :post && body.is_a?(Hash)
       headers.merge!(custom_headers)
 
