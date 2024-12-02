@@ -69,7 +69,11 @@ module EmergeCLI
           Logger.warn "Request failed (attempt #{retries}/#{MAX_RETRIES}): #{error_message}"
           Logger.warn "Retrying in #{delay} seconds..."
 
-          @internet.close rescue nil
+          begin
+            @internet.close
+          rescue StandardError
+            nil
+          end
           @internet = Async::HTTP::Internet.new
 
           sleep delay
