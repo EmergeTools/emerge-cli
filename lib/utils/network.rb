@@ -98,11 +98,6 @@ module EmergeCLI
       else
         raise "Unsupported method: #{method}"
       end
-    rescue NoMethodError => e
-      if e.message.include?('each') && e.backtrace.any? { |line| line.include?('hpack') }
-        raise "HTTP/2 headers error: Headers cannot be nil (#{headers.inspect})"
-      end
-      raise
     end
 
     def truncate_uri(uri, max_length = 100)
