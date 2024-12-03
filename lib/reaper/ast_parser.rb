@@ -76,6 +76,7 @@ module EmergeCLI
         lines_to_remove = []
 
         while (node = nodes_to_process.shift)
+          Logger.debug "Processing node: #{node.type} #{node_text(node)}"
           if declaration_node_types.include?(node.type)
             type_identifier_node = find_type_identifier(node)
             if type_identifier_node && fully_qualified_type_name(type_identifier_node) == type_name
@@ -95,6 +96,7 @@ module EmergeCLI
 
         lines = file_contents.split("\n")
         lines_to_remove.each do |range|
+          Logger.debug "Removing lines #{range[:start]} to #{range[:end]}"
           (range[:start]..range[:end]).each { |i| lines[i] = nil }
 
           # Remove extra newline after class declaration, but only if it's blank
@@ -141,6 +143,7 @@ module EmergeCLI
       private
 
       def remove_node(node, lines_to_remove)
+        Logger.debug "Removing node: #{node.type}"
         start_position = node.start_point.row
         end_position = node.end_point.row
         lines_to_remove << { start: start_position, end: end_position }

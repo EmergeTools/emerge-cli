@@ -32,6 +32,9 @@ module EmergeCLI
           return
         end
 
+        # Remove first module prefix for Swift types if present
+        type_name = type_name.split('.')[1..].join('.') if type_name.include?('.')
+
         language = case File.extname(full_path)
                   when '.swift' then 'swift'
                   when '.kt' then 'kotlin'
@@ -43,14 +46,16 @@ module EmergeCLI
 
         begin
           original_contents = File.read(full_path)
-          binding.pry
           parser = AstParser.new(language)
           modified_contents = parser.delete_type(
             file_contents: original_contents,
             type_name: type_name
           )
 
-          if modified_contents && modified_contents != original_contents
+          if modified_contents.nil?
+            File.delete(full_path)
+            Logger.info "Deleted file #{full_path} as it only contained #{type_name}"
+          elsif modified_contents != original_contents
             File.write(full_path, modified_contents)
             Logger.info "Successfully deleted #{type_name} from #{full_path}"
           else
