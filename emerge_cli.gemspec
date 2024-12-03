@@ -28,8 +28,7 @@ Gem::Specification.new do |spec|
   spec.executables   = ['emerge']
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'async', '~> 2.20.0'
-  spec.add_dependency 'async-http', '~> 0.83.1'
+  spec.add_dependency 'async-http', '~> 0.86.0'
   spec.add_dependency 'chunky_png', '~> 1.4.0'
   spec.add_dependency 'dry-cli', '~> 1.2.0'
   spec.add_dependency 'open3', '~> 0.2.1'
