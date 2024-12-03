@@ -8,7 +8,7 @@ module EmergeCLI
 
       option :upload_id, type: :string, required: true, desc: 'Upload ID to analyze'
       option :api_token, type: :string, required: false,
-                        desc: 'API token for authentication, defaults to ENV[EMERGE_API_TOKEN]'
+                         desc: 'API token for authentication, defaults to ENV[EMERGE_API_TOKEN]'
       option :verbose, type: :boolean, default: false, desc: 'Show detailed class information'
 
       def initialize(network: nil)
@@ -60,11 +60,12 @@ module EmergeCLI
 
           # Filter and process unseen classes
           unseen_code = dead_code
-            .select do |item|
-              item['paths'] &&
-              item['paths'].any? &&
-              item['paths'].none? { |path| path.include?('SourcePackages/checkouts') || path.include?('/Pods/') || path.include?('/Carthage/') || path.include?('/Vendor/') }
-            end
+                        .select do |item|
+            item['paths']&.any? &&
+              item['paths'].none? do |path|
+                path.include?('SourcePackages/checkouts') || path.include?('/Pods/') || path.include?('/Carthage/') || path.include?('/Vendor/')
+              end
+          end
             .reject { |item| item['seen'] }
 
           unseen_code.each do |item|
@@ -82,17 +83,17 @@ module EmergeCLI
 
           # Filter and sort groups
           significant_groups = prefix_groups
-            .select { |_, group| group.length >= min_group_size }
-            .sort_by { |_, group| -group.length }
-            .first(10)
+                               .select { |_, group| group.length >= min_group_size }
+                               .sort_by { |_, group| -group.length }
+                               .first(10)
 
-          return "No significant unseen class groupings found." if significant_groups.empty?
+          return 'No significant unseen class groupings found.' if significant_groups.empty?
 
-          output = ["Unseen Class Prefix Analysis (showing top 10 groups):"]
+          output = ['Unseen Class Prefix Analysis (showing top 10 groups):']
 
           significant_groups.each do |prefix, group|
             output << "\n#{prefix}.* (#{group.length} unseen classes)"
-            output << "  Example classes:"
+            output << '  Example classes:'
             group.first(3).each do |item|
               output << "  - #{item['class_name']}"
               item['paths'].each do |path|
@@ -136,13 +137,12 @@ module EmergeCLI
       def display_results(result)
         Logger.info result.to_s
 
-        if @options[:verbose]
-          Logger.info "\nDetailed Class Information:"
-          result.dead_code.each do |item|
-            Logger.info "Class: #{item['class_name']}"
-            Logger.info "Seen in sessions: #{item['seen']}"
-            Logger.info "Paths: #{item['paths']}\n\n"
-          end
+        return unless @options[:verbose]
+        Logger.info "\nDetailed Class Information:"
+        result.dead_code.each do |item|
+          Logger.info "Class: #{item['class_name']}"
+          Logger.info "Seen in sessions: #{item['seen']}"
+          Logger.info "Paths: #{item['paths']}\n\n"
         end
       end
     end
