@@ -1,3 +1,3 @@
-module EmergeCli
-  VERSION = '0.2.1'.freeze
+module EmergeCLI
+  VERSION = '0.2.2'.freeze
 end

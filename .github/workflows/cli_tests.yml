@@ -44,3 +44,33 @@ jobs:
           bundle exec rake test TESTOPTS="--verbose"
         env:
           MINITEST_REPORTER: ProgressReporter
+
+  integration:
+    name: CLI Integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2.2'
+          bundler-cache: true
+
+      - name: Create test images directory
+        run: |
+          mkdir -p test/fixtures/snapshots
+          # Create a simple test PNG file
+          convert -size 100x100 xc:white test/fixtures/snapshots/test1.png
+          convert -size 200x200 xc:blue test/fixtures/snapshots/test2.png
+
+      - name: Run CLI command
+        env:
+          EMERGE_API_TOKEN: ${{ secrets.EMERGE_API_TOKEN }}
+        run: |
+          bundle exec ruby exe/emerge upload snapshots \
+            --name "Emerge CLI Test" \
+            --id "com.emerge-cli.integration" \
+            --repo-name "EmergeTools/emerge-cli" \
+            --debug \
+            test/fixtures/snapshots
