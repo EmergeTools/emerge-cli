@@ -12,6 +12,7 @@ require_relative 'commands/config/orderfiles/orderfiles_ios'
 require_relative 'commands/reaper/reaper'
 
 require_relative 'reaper/ast_parser'
+require_relative 'reaper/code_deleter'
 
 require_relative 'utils/git_info_provider'
 require_relative 'utils/git_result'

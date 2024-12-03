@@ -1,6 +1,6 @@
 require 'tree_sitter'
 
-module Emerge
+module EmergeCLI
   module Reaper
     # Parses the AST of a given file using Tree Sitter and allows us to find usages or delete types.
     # This does have a lot of limitations since it only looks at a single file at a time,

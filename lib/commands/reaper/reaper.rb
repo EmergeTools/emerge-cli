@@ -10,6 +10,8 @@ module EmergeCLI
       option :upload_id, type: :string, required: true, desc: 'Upload ID to analyze'
       option :api_token, type: :string, required: false,
                          desc: 'API token for authentication, defaults to ENV[EMERGE_API_TOKEN]'
+      option :project_root, type: :string, required: false,
+                         desc: 'Root directory of the project, defaults to current directory'
       option :verbose, type: :boolean, default: false, desc: 'Show detailed class information'
 
       def initialize(network: nil)
@@ -18,6 +20,7 @@ module EmergeCLI
 
       def call(**options)
         @options = options
+        before(options)
         success = false
 
         begin
@@ -25,6 +28,7 @@ module EmergeCLI
           raise 'API token is required' unless api_token
 
           @network ||= EmergeCLI::Network.new(api_token:)
+          project_root = @options[:project_root] || Dir.pwd
 
           Sync do
             response = fetch_dead_code(@options[:upload_id])
@@ -45,6 +49,8 @@ module EmergeCLI
             end
 
             Logger.info "Proceeding with deletion..."
+            deleter = EmergeCLI::Reaper::CodeDeleter.new(project_root: project_root)
+            deleter.delete(selected_classes)
           end
         rescue StandardError => e
           Logger.error "Failed to analyze dead code: #{e.message}"
@@ -74,8 +80,13 @@ module EmergeCLI
         prompt = TTY::Prompt.new
 
         choices = unseen_classes.map do |item|
+          display_name = if item['paths']&.first
+            "#{item['class_name']} (#{item['paths'].first})"
+          else
+            item['class_name']
+          end
           {
-            name: "#{item['class_name']} (#{item['paths'].first})",
+            name: display_name,
             value: item
           }
         end
@@ -119,16 +130,23 @@ module EmergeCLI
 
         def filtered_unseen_classes
           @filtered_unseen_classes ||= dead_code
-            .select do |item|
-              item['paths']&.any? &&
-                item['paths'].none? do |path|
-                  path.include?('SourcePackages/checkouts') ||
-                  path.include?('/Pods/') ||
-                  path.include?('/Carthage/') ||
-                  path.include?('/Vendor/')
-                end
+            # .reject { |item| item['seen'] }
+            .reject do |item|
+              paths = item['paths']
+              next false if paths.nil? || paths.empty?
+
+              next true if paths.any? do |path|
+                path.include?('SourcePackages/checkouts/') ||
+                             path.include?('/Pods/') ||
+                             path.include?('/Carthage/') ||
+                             path.include?('/Vendor/') ||
+                             path.include?('/Sources/')
+              end
+
+              next false if paths.none? do |path|
+                path.end_with?('.swift', '.java', '.kt')
+              end
             end
-            .reject { |item| item['seen'] }
         end
 
         def to_s
