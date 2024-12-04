@@ -8,10 +8,10 @@ module EmergeCLI
         Logger.debug "Initialized CodeDeleter with project root: #{@project_root}"
       end
 
-      def delete(classes)
+      def delete_types(types)
         Logger.debug "Project root: #{@project_root}"
 
-        classes.each do |class_info|
+        types.each do |class_info|
           Logger.info "Deleting #{class_info['class_name']}"
           type_name = class_info['class_name']
           paths = class_info['paths']
@@ -21,14 +21,14 @@ module EmergeCLI
             full_path = File.join(@project_root, path)
             Logger.debug "Processing path: #{path}"
             Logger.debug "Resolved full path: #{full_path}"
-            delete_from_file(full_path, type_name)
+            delete_type_from_file(full_path, type_name)
           end
         end
       end
 
       private
 
-      def delete_from_file(full_path, type_name)
+      def delete_type_from_file(full_path, type_name)
         if !File.exist?(full_path)
           Logger.warn "File does not exist: #{full_path}"
           return
@@ -56,10 +56,8 @@ module EmergeCLI
 
           if modified_contents.nil?
             File.delete(full_path)
+            delete_type_from_xcode_project(full_path) if language == 'swift'
             Logger.info "Deleted file #{full_path} as it only contained #{type_name}"
-
-            # Handle Xcode project file updates for Swift files
-            remove_from_xcode_project(full_path) if language == 'swift'
           elsif modified_contents != original_contents
             File.write(full_path, modified_contents)
             Logger.info "Successfully deleted #{type_name} from #{full_path}"
@@ -72,10 +70,8 @@ module EmergeCLI
         end
       end
 
-      def remove_from_xcode_project(file_path)
-        # Find .xcodeproj file in project root
+      def delete_type_from_xcode_project(file_path)
         xcodeproj_path = Dir.glob(File.join(@project_root, '**/*.xcodeproj')).first
-
         if xcodeproj_path.nil?
           Logger.warn "No Xcode project found in #{@project_root}"
           return
@@ -83,11 +79,8 @@ module EmergeCLI
 
         begin
           project = Xcodeproj::Project.open(xcodeproj_path)
-
-          # Get the relative path from project root
           relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(@project_root)).to_s
 
-          # Find and remove the file reference
           file_ref = project.files.find { |f| f.real_path.to_s.end_with?(relative_path) }
           if file_ref
             file_ref.remove_from_project

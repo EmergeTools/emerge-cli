@@ -36,13 +36,13 @@ module EmergeCLI
 
             display_results(result)
 
-            selected_classes = prompt_class_selection(result.filtered_unseen_classes)
+            selected_types = prompt_class_selection(result.filtered_unseen_classes)
             Logger.info 'Selected classes:'
-            selected_classes.each do |selected_class|
+            selected_types.each do |selected_class|
               Logger.info " - #{selected_class['class_name']}"
             end
 
-            confirmed = confirm_deletion(selected_classes.length)
+            confirmed = confirm_deletion(selected_types.length)
             if !confirmed
               Logger.info 'Operation cancelled'
               return false
@@ -50,7 +50,7 @@ module EmergeCLI
 
             Logger.info 'Proceeding with deletion...'
             deleter = EmergeCLI::Reaper::CodeDeleter.new(project_root: project_root)
-            deleter.delete(selected_classes)
+            deleter.delete_types(selected_types)
           end
         rescue StandardError => e
           Logger.error "Failed to analyze dead code: #{e.message}"
