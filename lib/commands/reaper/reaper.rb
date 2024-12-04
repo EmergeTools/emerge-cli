@@ -14,12 +14,15 @@ module EmergeCLI
       option :api_token, type: :string, required: false,
                          desc: 'API token for authentication, defaults to ENV[EMERGE_API_TOKEN]'
 
+      option :profile, type: :boolean, default: false, desc: 'Enable performance profiling metrics'
+
       def initialize(network: nil)
         @network = network
       end
 
       def call(**options)
         @options = options
+        @profiler = EmergeCLI::Profiler.new(enabled: options[:profile])
         before(options)
         success = false
 
@@ -31,8 +34,8 @@ module EmergeCLI
           project_root = @options[:project_root] || Dir.pwd
 
           Sync do
-            response = fetch_dead_code(@options[:upload_id])
-            result = DeadCodeResult.new(JSON.parse(response.read))
+            response = @profiler.measure('fetch_dead_code') { fetch_dead_code(@options[:upload_id]) }
+            result = @profiler.measure('parse_dead_code') { DeadCodeResult.new(JSON.parse(response.read)) }
 
             Logger.info result.to_s
 
@@ -52,10 +55,14 @@ module EmergeCLI
             platform = result.metadata['platform']
             deleter = EmergeCLI::Reaper::CodeDeleter.new(
               project_root: project_root,
-              platform: platform
+              platform: platform,
+              profiler: @profiler
             )
-            deleter.delete_types(selected_types)
+            @profiler.measure('delete_types') { deleter.delete_types(selected_types) }
           end
+
+          @profiler.report if @options[:profile]
+          success = true
         rescue StandardError => e
           Logger.error "Failed to analyze dead code: #{e.message}"
           raise e

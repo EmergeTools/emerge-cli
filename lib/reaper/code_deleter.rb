@@ -3,9 +3,10 @@ require 'xcodeproj'
 module EmergeCLI
   module Reaper
     class CodeDeleter
-      def initialize(project_root:, platform:)
+      def initialize(project_root:, platform:, profiler:)
         @project_root = File.expand_path(project_root)
         @platform = platform
+        @profiler = profiler
         Logger.debug "Initialized CodeDeleter with project root: #{@project_root}, platform: #{@platform}"
       end
 
@@ -21,7 +22,9 @@ module EmergeCLI
 
           # Remove line number from path if present
           paths = class_info['paths']&.map { |path| path.sub(/:\d+$/, '') }
-          found_usages = find_type_in_project(type_name)
+          found_usages = @profiler.measure('find_type_in_project') do
+            find_type_in_project(type_name)
+          end
 
           if paths.nil? || paths.empty?
             Logger.info "No paths provided for #{type_name}, using found usages instead..."
@@ -40,7 +43,9 @@ module EmergeCLI
             full_path = File.join(@project_root, path)
             Logger.debug "Processing path: #{path}"
             Logger.debug "Resolved full path: #{full_path}"
-            delete_type_from_file(full_path, type_name)
+            @profiler.measure('delete_type_from_file') do
+              delete_type_from_file(full_path, type_name)
+            end
           end
         end
       end
@@ -63,19 +68,29 @@ module EmergeCLI
                    end
 
         begin
-          original_contents = File.read(full_path)
+          original_contents = @profiler.measure('read_file') { File.read(full_path) }
           parser = AstParser.new(language)
-          modified_contents = parser.delete_type(
-            file_contents: original_contents,
-            type_name: type_name
-          )
+          modified_contents = @profiler.measure('parse_and_delete_type') do
+            parser.delete_type(
+              file_contents: original_contents,
+              type_name: type_name
+            )
+          end
 
           if modified_contents.nil?
-            File.delete(full_path)
-            delete_type_from_xcode_project(full_path) if language == 'swift'
+            @profiler.measure('delete_file') do
+              File.delete(full_path)
+            end
+            if language == 'swift'
+              @profiler.measure('delete_type_from_xcode_project') do
+                delete_type_from_xcode_project(full_path)
+              end
+            end
             Logger.info "Deleted file #{full_path} as it only contained #{type_name}"
           elsif modified_contents != original_contents
-            File.write(full_path, modified_contents)
+            @profiler.measure('write_file') do
+              File.write(full_path, modified_contents)
+            end
             Logger.info "Successfully deleted #{type_name} from #{full_path}"
           else
             Logger.warn "No changes made to #{full_path} for #{type_name}"
