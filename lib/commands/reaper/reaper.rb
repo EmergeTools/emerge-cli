@@ -127,7 +127,7 @@ module EmergeCLI
 
         def filtered_unseen_classes
           @filtered_unseen_classes ||= dead_code
-                                       # .reject { |item| item['seen'] }
+                                       .reject { |item| item['seen'] }
                                        .reject do |item|
             paths = item['paths']
             next false if paths.nil? || paths.empty?
