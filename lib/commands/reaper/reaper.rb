@@ -8,10 +8,11 @@ module EmergeCLI
       desc 'Analyze dead code from an Emerge upload'
 
       option :upload_id, type: :string, required: true, desc: 'Upload ID to analyze'
+      option :project_root, type: :string, required: true,
+                            desc: 'Root directory of the project, defaults to current directory'
+
       option :api_token, type: :string, required: false,
                          desc: 'API token for authentication, defaults to ENV[EMERGE_API_TOKEN]'
-      option :project_root, type: :string, required: false,
-                            desc: 'Root directory of the project, defaults to current directory'
 
       def initialize(network: nil)
         @network = network

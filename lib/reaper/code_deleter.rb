@@ -20,9 +20,13 @@ module EmergeCLI
           type_name = type_name.split('.')[1..].join('.') if @platform == 'ios' && type_name.include?('.')
 
           paths = class_info['paths']
+          found_usages = find_type_in_project(type_name)
+
           if paths.nil? || paths.empty?
-            Logger.info "No paths provided for #{type_name}, scanning project..."
-            paths = find_type_in_project(type_name)
+            Logger.info "No paths provided for #{type_name}, using found usages instead..."
+            paths = found_usages
+              .select { |usage| usage[:usages].any? { |u| u[:usage_type] == 'declaration' } }
+              .map { |usage| usage[:path] }
             if paths.empty?
               Logger.warn "Could not find any files containing #{type_name}"
               next
@@ -107,7 +111,7 @@ module EmergeCLI
       end
 
       def find_type_in_project(type_name)
-        matching_paths = []
+        found_usages = []
         source_patterns = case @platform&.downcase
                           when 'ios'
                             { 'swift' => '**/*.swift' }
@@ -130,14 +134,18 @@ module EmergeCLI
             if usages.any?
               Logger.debug "✅ Found #{type_name} in #{file_path}"
               relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(@project_root)).to_s
-              matching_paths << relative_path
+              found_usages << {
+                path: relative_path,
+                usages: usages,
+                language: language
+              }
             end
           rescue StandardError => e
             Logger.warn "Error scanning #{file_path}: #{e.message}"
           end
         end
 
-        matching_paths
+        found_usages
       end
     end
   end
