@@ -11,7 +11,7 @@ module EmergeCLI
       option :api_token, type: :string, required: false,
                          desc: 'API token for authentication, defaults to ENV[EMERGE_API_TOKEN]'
       option :project_root, type: :string, required: false,
-                         desc: 'Root directory of the project, defaults to current directory'
+                            desc: 'Root directory of the project, defaults to current directory'
       option :verbose, type: :boolean, default: false, desc: 'Show detailed class information'
 
       def initialize(network: nil)
@@ -37,18 +37,18 @@ module EmergeCLI
             display_results(result)
 
             selected_classes = prompt_class_selection(result.filtered_unseen_classes)
-            Logger.info "Selected classes:"
+            Logger.info 'Selected classes:'
             selected_classes.each do |selected_class|
               Logger.info " - #{selected_class['class_name']}"
             end
 
             confirmed = confirm_deletion(selected_classes.length)
             if !confirmed
-              Logger.info "Operation cancelled"
+              Logger.info 'Operation cancelled'
               return false
             end
 
-            Logger.info "Proceeding with deletion..."
+            Logger.info 'Proceeding with deletion...'
             deleter = EmergeCLI::Reaper::CodeDeleter.new(project_root: project_root)
             deleter.delete(selected_classes)
           end
@@ -81,10 +81,10 @@ module EmergeCLI
 
         choices = unseen_classes.map do |item|
           display_name = if item['paths']&.first
-            "#{item['class_name']} (#{item['paths'].first})"
-          else
-            item['class_name']
-          end
+                           "#{item['class_name']} (#{item['paths'].first})"
+                         else
+                           item['class_name']
+                         end
           {
             name: display_name,
             value: item
@@ -92,7 +92,7 @@ module EmergeCLI
         end
 
         prompt.multi_select(
-          "Select classes to delete:".blue,
+          'Select classes to delete:'.blue,
           choices,
           per_page: 15,
           echo: false,
@@ -130,23 +130,23 @@ module EmergeCLI
 
         def filtered_unseen_classes
           @filtered_unseen_classes ||= dead_code
-            # .reject { |item| item['seen'] }
-            .reject do |item|
-              paths = item['paths']
-              next false if paths.nil? || paths.empty?
+                                       # .reject { |item| item['seen'] }
+                                       .reject do |item|
+            paths = item['paths']
+            next false if paths.nil? || paths.empty?
 
-              next true if paths.any? do |path|
-                path.include?('SourcePackages/checkouts/') ||
-                             path.include?('/Pods/') ||
-                             path.include?('/Carthage/') ||
-                             path.include?('/Vendor/') ||
-                             path.include?('/Sources/')
-              end
-
-              next false if paths.none? do |path|
-                path.end_with?('.swift', '.java', '.kt')
-              end
+            next true if paths.any? do |path|
+              path.include?('SourcePackages/checkouts/') ||
+              path.include?('/Pods/') ||
+              path.include?('/Carthage/') ||
+              path.include?('/Vendor/') ||
+              path.include?('/Sources/')
             end
+
+            next false if paths.none? do |path|
+              path.end_with?('.swift', '.java', '.kt')
+            end
+          end
         end
 
         def to_s

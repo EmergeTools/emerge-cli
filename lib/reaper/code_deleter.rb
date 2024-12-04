@@ -1,3 +1,5 @@
+require 'xcodeproj'
+
 module EmergeCLI
   module Reaper
     class CodeDeleter
@@ -15,7 +17,7 @@ module EmergeCLI
           paths = class_info['paths']
 
           paths.each do |path|
-            path = path.sub(/^\//, '')
+            path = path.sub(%r{^/}, '')
             full_path = File.join(@project_root, path)
             Logger.debug "Processing path: #{path}"
             Logger.debug "Resolved full path: #{full_path}"
@@ -36,13 +38,13 @@ module EmergeCLI
         type_name = type_name.split('.')[1..].join('.') if type_name.include?('.')
 
         language = case File.extname(full_path)
-                  when '.swift' then 'swift'
-                  when '.kt' then 'kotlin'
-                  when '.java' then 'java'
-                  else
-                    Logger.warn "Unsupported file type for #{full_path}"
-                    return
-                  end
+                   when '.swift' then 'swift'
+                   when '.kt' then 'kotlin'
+                   when '.java' then 'java'
+                   else
+                     Logger.warn "Unsupported file type for #{full_path}"
+                     return
+                   end
 
         begin
           original_contents = File.read(full_path)
@@ -55,14 +57,47 @@ module EmergeCLI
           if modified_contents.nil?
             File.delete(full_path)
             Logger.info "Deleted file #{full_path} as it only contained #{type_name}"
+
+            # Handle Xcode project file updates for Swift files
+            remove_from_xcode_project(full_path) if language == 'swift'
           elsif modified_contents != original_contents
             File.write(full_path, modified_contents)
             Logger.info "Successfully deleted #{type_name} from #{full_path}"
           else
             Logger.warn "No changes made to #{full_path} for #{type_name}"
           end
-        rescue => e
+        rescue StandardError => e
           Logger.error "Failed to delete #{type_name} from #{full_path}: #{e.message}"
+          Logger.error e.backtrace.join("\n")
+        end
+      end
+
+      def remove_from_xcode_project(file_path)
+        # Find .xcodeproj file in project root
+        xcodeproj_path = Dir.glob(File.join(@project_root, '**/*.xcodeproj')).first
+
+        if xcodeproj_path.nil?
+          Logger.warn "No Xcode project found in #{@project_root}"
+          return
+        end
+
+        begin
+          project = Xcodeproj::Project.open(xcodeproj_path)
+
+          # Get the relative path from project root
+          relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(@project_root)).to_s
+
+          # Find and remove the file reference
+          file_ref = project.files.find { |f| f.real_path.to_s.end_with?(relative_path) }
+          if file_ref
+            file_ref.remove_from_project
+            project.save
+            Logger.info "Removed #{relative_path} from Xcode project"
+          else
+            Logger.warn "Could not find #{relative_path} in Xcode project"
+          end
+        rescue StandardError => e
+          Logger.error "Failed to update Xcode project: #{e.message}"
           Logger.error e.backtrace.join("\n")
         end
       end
