@@ -109,33 +109,31 @@ module EmergeCLI
       def find_type_in_project(type_name)
         matching_paths = []
         source_patterns = case @platform&.downcase
-                         when 'ios'
-                           { 'swift' => '**/*.swift' }
-                         when 'android'
-                           {
-                             'kotlin' => '**/*.kt',
-                             'java' => '**/*.java'
-                           }
-                         else
-                           raise "Unsupported platform: #{@platform}"
-                         end
+                          when 'ios'
+                            { 'swift' => '**/*.swift' }
+                          when 'android'
+                            {
+                              'kotlin' => '**/*.kt',
+                              'java' => '**/*.java'
+                            }
+                          else
+                            raise "Unsupported platform: #{@platform}"
+                          end
 
         source_patterns.each do |language, pattern|
           Dir.glob(File.join(@project_root, pattern)).each do |file_path|
-            begin
-              Logger.debug "Scanning #{file_path} for #{type_name}"
-              contents = File.read(file_path)
-              parser = AstParser.new(language)
-              usages = parser.find_usages(file_contents: contents, type_name: type_name)
+            Logger.debug "Scanning #{file_path} for #{type_name}"
+            contents = File.read(file_path)
+            parser = AstParser.new(language)
+            usages = parser.find_usages(file_contents: contents, type_name: type_name)
 
-              if usages.any?
-                Logger.debug "✅ Found #{type_name} in #{file_path}"
-                relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(@project_root)).to_s
-                matching_paths << relative_path
-              end
-            rescue StandardError => e
-              Logger.warn "Error scanning #{file_path}: #{e.message}"
+            if usages.any?
+              Logger.debug "✅ Found #{type_name} in #{file_path}"
+              relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(@project_root)).to_s
+              matching_paths << relative_path
             end
+          rescue StandardError => e
+            Logger.warn "Error scanning #{file_path}: #{e.message}"
           end
         end
 
