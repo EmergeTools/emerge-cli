@@ -48,7 +48,11 @@ module EmergeCLI
             end
 
             Logger.info 'Proceeding with deletion...'
-            deleter = EmergeCLI::Reaper::CodeDeleter.new(project_root: project_root)
+            platform = result.metadata['platform']
+            deleter = EmergeCLI::Reaper::CodeDeleter.new(
+              project_root: project_root,
+              platform: platform
+            )
             deleter.delete_types(selected_types)
           end
         rescue StandardError => e
@@ -133,11 +137,12 @@ module EmergeCLI
             next false if paths.nil? || paths.empty?
 
             next true if paths.any? do |path|
-              path.include?('SourcePackages/checkouts/') ||
+              path.include?('/SourcePackages/checkouts/') ||
               path.include?('/Pods/') ||
               path.include?('/Carthage/') ||
               path.include?('/Vendor/') ||
-              path.include?('/Sources/')
+              path.include?('/Sources/') ||
+              path.include?('/DerivedSources/')
             end
 
             next false if paths.none? do |path|
