@@ -19,7 +19,8 @@ module EmergeCLI
           # Remove first module prefix for Swift types if present
           type_name = type_name.split('.')[1..].join('.') if @platform == 'ios' && type_name.include?('.')
 
-          paths = class_info['paths']
+          # Remove line number from path if present
+          paths = class_info['paths']&.map { |path| path.sub(/:\d+$/, '') }
           found_usages = find_type_in_project(type_name)
 
           if paths.nil? || paths.empty?
@@ -125,7 +126,8 @@ module EmergeCLI
                           end
 
         source_patterns.each do |language, pattern|
-          Dir.glob(File.join(@project_root, pattern)).each do |file_path|
+          # Exclude files in build directories, e.g. for Android
+          Dir.glob(File.join(@project_root, pattern)).reject { |path| path.include?('/build/') }.each do |file_path|
             Logger.debug "Scanning #{file_path} for #{type_name}"
             contents = File.read(file_path)
             parser = AstParser.new(language)
