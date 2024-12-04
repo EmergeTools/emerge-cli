@@ -12,7 +12,6 @@ module EmergeCLI
                          desc: 'API token for authentication, defaults to ENV[EMERGE_API_TOKEN]'
       option :project_root, type: :string, required: false,
                             desc: 'Root directory of the project, defaults to current directory'
-      option :verbose, type: :boolean, default: false, desc: 'Show detailed class information'
 
       def initialize(network: nil)
         @network = network
@@ -108,8 +107,6 @@ module EmergeCLI
 
       def display_results(result)
         Logger.info result.to_s
-
-        return unless @options[:verbose]
         Logger.info "\nDetailed Class Information:"
         result.dead_code.each do |item|
           Logger.info "Class: #{item['class_name']}"
