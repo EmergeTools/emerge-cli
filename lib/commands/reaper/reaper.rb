@@ -34,7 +34,7 @@ module EmergeCLI
             response = fetch_dead_code(@options[:upload_id])
             result = DeadCodeResult.new(JSON.parse(response.read))
 
-            display_results(result)
+            Logger.info result.to_s
 
             selected_types = prompt_class_selection(result.filtered_unseen_classes)
             Logger.info 'Selected classes:'
@@ -108,16 +108,6 @@ module EmergeCLI
       def confirm_deletion(count)
         prompt = TTY::Prompt.new
         prompt.yes?("Are you sure you want to delete #{count} class#{count > 1 ? 'es' : ''}?")
-      end
-
-      def display_results(result)
-        Logger.info result.to_s
-        Logger.info "\nDetailed Class Information:"
-        result.dead_code.each do |item|
-          Logger.info "Class: #{item['class_name']}"
-          Logger.info "Seen in sessions: #{item['seen']}"
-          Logger.info "Paths: #{item['paths']}\n\n"
-        end
       end
 
       class DeadCodeResult
