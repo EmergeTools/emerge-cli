@@ -1,6 +1,6 @@
 require 'test_helper'
 
-module Emerge
+module EmergeCLI
   module Reaper
     class AstParserTest < Minitest::Test
       describe 'Swift' do
