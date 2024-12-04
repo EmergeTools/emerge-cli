@@ -25,8 +25,8 @@ module EmergeCLI
           if paths.nil? || paths.empty?
             Logger.info "No paths provided for #{type_name}, using found usages instead..."
             paths = found_usages
-              .select { |usage| usage[:usages].any? { |u| u[:usage_type] == 'declaration' } }
-              .map { |usage| usage[:path] }
+                    .select { |usage| usage[:usages].any? { |u| u[:usage_type] == 'declaration' } }
+                    .map { |usage| usage[:path] }
             if paths.empty?
               Logger.warn "Could not find any files containing #{type_name}"
               next
