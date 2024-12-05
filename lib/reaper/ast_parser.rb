@@ -367,57 +367,49 @@ module EmergeCLI
           modified_contents = remove_single_node(modified_contents, node)
         end
 
-        # Restore the original newline state
+        # Restore the original newline state at the end of the file
         modified_contents.chomp!
         had_final_newline ? "#{modified_contents}\n" : modified_contents
       end
 
       def remove_single_node(content, node)
-        # Get the lines before and after the node
         had_final_newline = content.end_with?("\n")
-        lines = content.split("\n")
-        node_start_line = node.start_point.row
-        node_end_line = node.end_point.row
-
-        # Check if the lines immediately before and after are blank
-        prev_line_blank = node_start_line > 0 && lines[node_start_line - 1].match?(/^\s*$/)
-        next_line_blank = node_end_line < lines.length - 1 && lines[node_end_line + 1].match?(/^\s*$/)
-
-        Logger.debug "Blank lines check: previous=#{prev_line_blank}, next=#{next_line_blank}"
 
         # Remove the node's content
         start_byte = node.start_byte
         end_byte = node.end_byte
-        text_to_remove = content[start_byte...end_byte]
-        Logger.debug "Removing text: #{text_to_remove}"
+        Logger.debug "Removing text: #{content[start_byte...end_byte]}"
         content[start_byte...end_byte] = ''
 
-        # Clean up surrounding blank lines
+        # Clean up any blank lines created by the removal
+        content = cleanup_blank_lines(content, node.start_point.row, node.end_point.row)
+
+        had_final_newline ? "#{content}\n" : content
+      end
+
+      def cleanup_blank_lines(content, start_line, end_line)
         lines = content.split("\n")
 
-        # Check if removing the node created consecutive blank lines
-        prev_line = node_start_line > 0 ? lines[node_start_line - 1] : nil
-        next_line = node_end_line + 1 < lines.length ? lines[node_end_line + 1] : nil
-
-        if prev_line && next_line && prev_line.match?(/^\s*$/) && next_line.match?(/^\s*$/)
-          Logger.debug 'Found consecutive blank lines after removal'
-          Logger.debug "  Previous line (#{node_start_line - 1}): '#{prev_line}'"
-          Logger.debug "  Next line (#{node_end_line + 1}): '#{next_line}'"
-          # Remove one of the blank lines to prevent double spacing
-          lines[node_start_line - 1] = nil
+        # Check for consecutive blank lines around the removed content
+        if consecutive_blank_lines?(lines, start_line, end_line)
+          lines[start_line - 1] = nil
         end
 
-        # Remove any blank lines left by the node removal
-        (node_start_line..node_end_line).each do |i|
-          if lines[i]&.match?(/^\s*$/)
-            Logger.debug "  Removing blank line left by node (line #{i}): '#{lines[i]}'"
-            lines[i] = nil
-          end
+        # Remove any blank lines left in the removed node's place
+        (start_line..end_line).each do |i|
+          lines[i] = nil if lines[i]&.match?(/^\s*$/)
         end
 
-        content = lines.compact.join("\n")
-        content += "\n" if had_final_newline
-        content
+        lines.compact.join("\n")
+      end
+
+      def consecutive_blank_lines?(lines, start_line, end_line)
+        return false unless start_line > 0 && end_line + 1 < lines.length
+
+        prev_line = lines[start_line - 1]
+        next_line = lines[end_line + 1]
+
+        prev_line&.match?(/^\s*$/) && next_line&.match?(/^\s*$/)
       end
     end
   end
