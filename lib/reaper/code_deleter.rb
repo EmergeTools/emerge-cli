@@ -38,6 +38,7 @@ module EmergeCLI
             Logger.info "Found #{type_name} in: #{paths.join(', ')}"
           end
 
+          # First pass: Delete declarations
           paths.each do |path|
             path = path.sub(%r{^/}, '')
             full_path = File.join(@project_root, path)
@@ -45,6 +46,18 @@ module EmergeCLI
             Logger.debug "Resolved full path: #{full_path}"
             @profiler.measure('delete_type_from_file') do
               delete_type_from_file(full_path, type_name)
+            end
+          end
+
+          # Second pass: Delete remaining usages
+          # Re-scan for usages since line numbers may have changed
+          identifier_usages = found_usages.select { |usage| usage[:usages].any? { |u| u[:usage_type] == 'identifier' } }
+          identifier_usage_paths = identifier_usages.map { |usage| usage[:path] }.uniq
+          identifier_usage_paths.each do |path|
+            full_path = File.join(@project_root, path)
+            Logger.debug "Processing usages in path: #{path}"
+            @profiler.measure('delete_usages_from_file') do
+              delete_usages_from_file(full_path, type_name)
             end
           end
         end
@@ -163,6 +176,38 @@ module EmergeCLI
         end
 
         found_usages
+      end
+
+      # New method to handle deletion of type usages
+      def delete_usages_from_file(full_path, type_name)
+        return unless File.exist?(full_path)
+
+        language = case File.extname(full_path)
+                   when '.swift' then 'swift'
+                   when '.kt' then 'kotlin'
+                   when '.java' then 'java'
+                   else
+                     Logger.warn "Unsupported file type for #{full_path}"
+                     return
+                   end
+
+        begin
+          original_contents = File.read(full_path)
+          parser = AstParser.new(language)
+
+          modified_contents = parser.delete_usage(
+            file_contents: original_contents,
+            type_name: type_name
+          )
+
+          if modified_contents != original_contents
+            File.write(full_path, modified_contents)
+            Logger.info "Successfully removed usages of #{type_name} from #{full_path}"
+          end
+        rescue StandardError => e
+          Logger.error "Failed to delete usages of #{type_name} from #{full_path}: #{e.message}"
+          Logger.error e.backtrace.join("\n")
+        end
       end
     end
   end
