@@ -51,18 +51,21 @@ module EmergeCLI
           end
 
           # Second pass: Delete remaining usages (unless skipped)
-          next if @skip_delete_usages
-          identifier_usages = found_usages.select do |usage|
-            usage[:usages].any? do |u|
-              u[:usage_type] == 'identifier'
+          if @skip_delete_usages
+            Logger.info 'Skipping delete usages'
+          else
+            identifier_usages = found_usages.select do |usage|
+              usage[:usages].any? do |u|
+                u[:usage_type] == 'identifier'
+              end
             end
-          end
-          identifier_usage_paths = identifier_usages.map { |usage| usage[:path] }.uniq
-          identifier_usage_paths.each do |path|
-            full_path = File.join(@project_root, path)
-            Logger.debug "Processing usages in path: #{path}"
-            @profiler.measure('delete_usages_from_file') do
-              delete_usages_from_file(full_path, type_name)
+            identifier_usage_paths = identifier_usages.map { |usage| usage[:path] }.uniq
+            identifier_usage_paths.each do |path|
+              full_path = File.join(@project_root, path)
+              Logger.debug "Processing usages in path: #{path}"
+              @profiler.measure('delete_usages_from_file') do
+                delete_usages_from_file(full_path, type_name)
+              end
             end
           end
         end
@@ -90,7 +93,7 @@ module EmergeCLI
             @profiler.measure('delete_file') do
               File.delete(full_path)
             end
-            if language == 'swift'
+            if parser.language == 'swift'
               @profiler.measure('delete_type_from_xcode_project') do
                 delete_type_from_xcode_project(full_path)
               end
