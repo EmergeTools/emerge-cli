@@ -60,11 +60,15 @@ module EmergeCLI
               end
             end
             identifier_usage_paths = identifier_usages.map { |usage| usage[:path] }.uniq
-            identifier_usage_paths.each do |path|
-              full_path = File.join(@project_root, path)
-              Logger.debug "Processing usages in path: #{path}"
-              @profiler.measure('delete_usages_from_file') do
-                delete_usages_from_file(full_path, type_name)
+            if identifier_usage_paths.empty?
+              Logger.info 'No identifier usages found, skipping delete usages'
+            else
+              identifier_usage_paths.each do |path|
+                full_path = File.join(@project_root, path)
+                Logger.debug "Processing usages in path: #{path}"
+                @profiler.measure('delete_usages_from_file') do
+                  delete_usages_from_file(full_path, type_name)
+                end
               end
             end
           end
