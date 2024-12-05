@@ -76,18 +76,9 @@ module EmergeCLI
           return
         end
 
-        language = case File.extname(full_path)
-                   when '.swift' then 'swift'
-                   when '.kt' then 'kotlin'
-                   when '.java' then 'java'
-                   else
-                     Logger.warn "Unsupported file type for #{full_path}"
-                     return
-                   end
-
         begin
           original_contents = @profiler.measure('read_file') { File.read(full_path) }
-          parser = AstParser.new(language)
+          parser = create_parser_for_file(full_path)
           modified_contents = @profiler.measure('parse_and_delete_type') do
             parser.delete_type(
               file_contents: original_contents,
@@ -159,11 +150,10 @@ module EmergeCLI
                           end
 
         source_patterns.each do |language, pattern|
-          # Exclude files in build directories, e.g. for Android
           Dir.glob(File.join(@project_root, pattern)).reject { |path| path.include?('/build/') }.each do |file_path|
             Logger.debug "Scanning #{file_path} for #{type_name}"
             contents = File.read(file_path)
-            parser = AstParser.new(language)
+            parser = create_parser_for_file(file_path)
             usages = parser.find_usages(file_contents: contents, type_name: type_name)
 
             if usages.any?
@@ -186,19 +176,9 @@ module EmergeCLI
       def delete_usages_from_file(full_path, type_name)
         return unless File.exist?(full_path)
 
-        language = case File.extname(full_path)
-                   when '.swift' then 'swift'
-                   when '.kt' then 'kotlin'
-                   when '.java' then 'java'
-                   else
-                     Logger.warn "Unsupported file type for #{full_path}"
-                     return
-                   end
-
         begin
           original_contents = File.read(full_path)
-          parser = AstParser.new(language)
-
+          parser = create_parser_for_file(full_path)
           modified_contents = parser.delete_usage(
             file_contents: original_contents,
             type_name: type_name
@@ -212,6 +192,17 @@ module EmergeCLI
           Logger.error "Failed to delete usages of #{type_name} from #{full_path}: #{e.message}"
           Logger.error e.backtrace.join("\n")
         end
+      end
+
+      def create_parser_for_file(file_path)
+        language = case File.extname(file_path)
+                   when '.swift' then 'swift'
+                   when '.kt' then 'kotlin'
+                   when '.java' then 'java'
+                   else
+                     raise "Unsupported file type for #{file_path}"
+                   end
+        AstParser.new(language)
       end
     end
   end
