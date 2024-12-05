@@ -374,6 +374,8 @@ module EmergeCLI
         prev_line_blank = node_start_line > 0 && lines[node_start_line - 1].match?(/^\s*$/)
         next_line_blank = node_end_line < lines.length - 1 && lines[node_end_line + 1].match?(/^\s*$/)
 
+        Logger.debug "Blank lines check: previous=#{prev_line_blank}, next=#{next_line_blank}"
+
         # Remove the node's content
         start_byte = node.start_byte
         end_byte = node.end_byte
@@ -381,13 +383,30 @@ module EmergeCLI
         Logger.debug "Removing text: #{text_to_remove}"
         content[start_byte...end_byte] = ''
 
-        # If we're left with consecutive blank lines, remove one of them
-        if prev_line_blank && next_line_blank
-          lines = content.split("\n")
-          lines[node_start_line] = nil if lines[node_start_line]&.match?(/^\s*$/)
-          content = lines.compact.join("\n")
+        # Clean up surrounding blank lines
+        lines = content.split("\n")
+
+        # Check if removing the node created consecutive blank lines
+        prev_line = node_start_line > 0 ? lines[node_start_line - 1] : nil
+        next_line = node_end_line + 1 < lines.length ? lines[node_end_line + 1] : nil
+
+        if prev_line && next_line && prev_line.match?(/^\s*$/) && next_line.match?(/^\s*$/)
+          Logger.debug "Found consecutive blank lines after removal"
+          Logger.debug "  Previous line (#{node_start_line - 1}): '#{prev_line}'"
+          Logger.debug "  Next line (#{node_end_line + 1}): '#{next_line}'"
+          # Remove one of the blank lines to prevent double spacing
+          lines[node_start_line - 1] = nil
         end
 
+        # Remove any blank lines left by the node removal
+        (node_start_line..node_end_line).each do |i|
+          if lines[i]&.match?(/^\s*$/)
+            Logger.debug "  Removing blank line left by node (line #{i}): '#{lines[i]}'"
+            lines[i] = nil
+          end
+        end
+
+        content = lines.compact.join("\n")
         content
       end
     end
