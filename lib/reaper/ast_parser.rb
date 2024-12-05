@@ -355,17 +355,23 @@ module EmergeCLI
         # Sort nodes by their position in reverse order to avoid offset issues
         nodes.sort_by! { |n| -n.start_byte }
 
+        # Check if original file had final newline
+        had_final_newline = content.end_with?("\n")
+
         # Remove each node and clean up surrounding blank lines
         modified_contents = content.dup
         nodes.each do |node|
           modified_contents = remove_single_node(modified_contents, node)
         end
 
-        modified_contents
+        # Restore the original newline state
+        modified_contents.chomp!
+        had_final_newline ? modified_contents + "\n" : modified_contents
       end
 
       def remove_single_node(content, node)
         # Get the lines before and after the node
+        had_final_newline = content.end_with?("\n")
         lines = content.split("\n")
         node_start_line = node.start_point.row
         node_end_line = node.end_point.row
@@ -407,6 +413,7 @@ module EmergeCLI
         end
 
         content = lines.compact.join("\n")
+        content += "\n" if had_final_newline
         content
       end
     end
