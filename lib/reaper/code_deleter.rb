@@ -3,10 +3,11 @@ require 'xcodeproj'
 module EmergeCLI
   module Reaper
     class CodeDeleter
-      def initialize(project_root:, platform:, profiler:)
+      def initialize(project_root:, platform:, profiler:, skip_delete_usages: false)
         @project_root = File.expand_path(project_root)
         @platform = platform
         @profiler = profiler
+        @skip_delete_usages = skip_delete_usages
         Logger.debug "Initialized CodeDeleter with project root: #{@project_root}, platform: #{@platform}"
       end
 
@@ -49,15 +50,17 @@ module EmergeCLI
             end
           end
 
-          # Second pass: Delete remaining usages
-          # Re-scan for usages since line numbers may have changed
-          identifier_usages = found_usages.select { |usage| usage[:usages].any? { |u| u[:usage_type] == 'identifier' } }
-          identifier_usage_paths = identifier_usages.map { |usage| usage[:path] }.uniq
-          identifier_usage_paths.each do |path|
-            full_path = File.join(@project_root, path)
-            Logger.debug "Processing usages in path: #{path}"
-            @profiler.measure('delete_usages_from_file') do
-              delete_usages_from_file(full_path, type_name)
+          # Second pass: Delete remaining usages (unless skipped)
+          unless @skip_delete_usages
+            # Re-scan for usages since line numbers may have changed
+            identifier_usages = found_usages.select { |usage| usage[:usages].any? { |u| u[:usage_type] == 'identifier' } }
+            identifier_usage_paths = identifier_usages.map { |usage| usage[:path] }.uniq
+            identifier_usage_paths.each do |path|
+              full_path = File.join(@project_root, path)
+              Logger.debug "Processing usages in path: #{path}"
+              @profiler.measure('delete_usages_from_file') do
+                delete_usages_from_file(full_path, type_name)
+              end
             end
           end
         end
