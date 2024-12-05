@@ -9,8 +9,10 @@ require_relative 'commands/upload/snapshots/client_libraries/default'
 require_relative 'commands/integrate/fastlane'
 require_relative 'commands/config/snapshots/snapshots_ios'
 require_relative 'commands/config/orderfiles/orderfiles_ios'
+require_relative 'commands/reaper/reaper'
 
 require_relative 'reaper/ast_parser'
+require_relative 'reaper/code_deleter'
 
 require_relative 'utils/git_info_provider'
 require_relative 'utils/git_result'
@@ -40,6 +42,8 @@ module EmergeCLI
     prefix.register 'snapshots-ios', Commands::Config::SnapshotsIOS
     prefix.register 'order-files-ios', Commands::Config::OrderFilesIOS
   end
+
+  register 'reaper', Commands::Reaper
 end
 
 # By default the log level is INFO, but can be overridden by the --debug flag
