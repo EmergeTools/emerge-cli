@@ -153,7 +153,6 @@ module EmergeCLI
           identifier_type = identifier_node_types.include?(node.type)
           if identifier_type && node_text(node) == type_name
             Logger.debug "Found usage of #{type_name} in node type: #{node.type}"
-            # Find the smallest removable expression containing this type
             removable_node = find_removable_parent(node)
             if removable_node
               Logger.debug "Will remove parent node of type: #{removable_node.type}"
@@ -170,27 +169,7 @@ module EmergeCLI
         return file_contents if nodes_to_remove.empty?
 
         Logger.debug "Found #{nodes_to_remove.length} nodes to remove"
-
-        # Sort nodes by their position in reverse order to avoid offset issues
-        nodes_to_remove.sort_by! { |n| -n.start_byte }
-
-        # Remove each node by replacing its text with empty string
-        modified_contents = file_contents.dup
-        nodes_to_remove.each do |node|
-          start_byte = node.start_byte
-          end_byte = node.end_byte
-          text_to_remove = modified_contents[start_byte...end_byte]
-          Logger.debug "Removing text: #{text_to_remove}"
-          modified_contents[start_byte...end_byte] = ''
-        end
-
-        # Clean up any empty lines or extra whitespace
-        Logger.debug "Cleaning up whitespace and formatting"
-        modified_contents.gsub!(/\n\s*\n\s*\n/, "\n\n") # Collapse multiple empty lines
-        modified_contents.gsub!(/,\s*,/, ',') # Clean up consecutive commas
-        modified_contents.gsub!(/\(\s*\)/, '()') # Clean up empty parentheses
-
-        modified_contents
+        remove_nodes_from_content(file_contents, nodes_to_remove)
       end
 
       private
@@ -304,6 +283,12 @@ module EmergeCLI
               parent_call = current.parent
               if parent_call && parent_call.type == :call_expression
                 Logger.debug "Found call expression containing navigation expression"
+                # Check if this call is the only statement in an if condition
+                if_statement = find_parent_if_statement(parent_call)
+                if if_statement && contains_single_statement?(if_statement)
+                  Logger.debug "Found if statement with single call, removing entire if block"
+                  return if_statement
+                end
                 return parent_call
               end
             end
@@ -318,6 +303,92 @@ module EmergeCLI
 
         Logger.debug "No better parent found, returning original node"
         node
+      end
+
+      def find_parent_if_statement(node)
+        current = node
+        Logger.debug "Looking for parent if statement starting from node type: #{node.type}"
+        while current && !current.null?
+          Logger.debug "  Checking node type: #{current.type}"
+          if current.type == :if_statement
+            Logger.debug "  Found parent if statement"
+            return current
+          end
+          current = current.parent
+        end
+        Logger.debug "  No parent if statement found"
+        nil
+      end
+
+      def contains_single_statement?(if_statement)
+        Logger.debug "Checking if statement for single statement"
+        # Find the block/body of the if statement - try different field names based on language
+        block = if_statement.child_by_field_name('consequence') ||
+                 if_statement.child_by_field_name('body') ||
+                 if_statement.find { |child| child.type == :statements }
+
+        unless block
+          Logger.debug "  No block found in if statement. Node structure:"
+          Logger.debug "  If statement type: #{if_statement.type}"
+          Logger.debug "  Children types:"
+          if_statement.each do |child|
+            Logger.debug "    - #{child.type} (text: #{node_text(child)[0..50]}...)"
+          end
+          return false
+        end
+
+        Logger.debug "  Found block of type: #{block.type}"
+
+        relevant_children = block.reject do |child|
+          [:comment, :line_break, :whitespace].include?(child.type)
+        end
+
+        Logger.debug "  Found #{relevant_children.length} significant children in if block"
+        relevant_children.each do |child|
+          Logger.debug "    Child type: #{child.type}, text: #{node_text(child)[0..50]}..."
+        end
+
+        relevant_children.length == 1
+      end
+
+      def remove_nodes_from_content(content, nodes)
+        # Sort nodes by their position in reverse order to avoid offset issues
+        nodes.sort_by! { |n| -n.start_byte }
+
+        # Remove each node and clean up surrounding blank lines
+        modified_contents = content.dup
+        nodes.each do |node|
+          modified_contents = remove_single_node(modified_contents, node)
+        end
+
+        modified_contents
+      end
+
+      def remove_single_node(content, node)
+        # Get the lines before and after the node
+        lines = content.split("\n")
+        node_start_line = node.start_point.row
+        node_end_line = node.end_point.row
+
+        # Check if the lines immediately before and after are blank
+        prev_line_blank = node_start_line > 0 && lines[node_start_line - 1].match?(/^\s*$/)
+        next_line_blank = node_end_line < lines.length - 1 && lines[node_end_line + 1].match?(/^\s*$/)
+
+        # Remove the node's content
+        start_byte = node.start_byte
+        end_byte = node.end_byte
+        text_to_remove = content[start_byte...end_byte]
+        Logger.debug "Removing text: #{text_to_remove}"
+        content[start_byte...end_byte] = ''
+
+        # If we're left with consecutive blank lines, remove one of them
+        if prev_line_blank && next_line_blank
+          lines = content.split("\n")
+          lines[node_start_line] = nil if lines[node_start_line]&.match?(/^\s*$/)
+          content = lines.compact.join("\n")
+        end
+
+        content
       end
     end
   end

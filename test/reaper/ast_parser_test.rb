@@ -421,6 +421,97 @@ module EmergeCLI
           end
         end
 
+        describe 'delete_type' do
+          def test_deletes_usage_of_class_inside_call_expression
+            language = 'swift'
+            parser = AstParser.new(language)
+            file_contents = <<~SWIFT
+              //
+              //  HackerNewsAPI.swift
+              //  Hacker News
+              //
+              //  Created by Trevor Elkins on 6/20/23.
+              //
+
+              import Foundation
+
+              class HNApi {
+
+                init() {}
+
+                func fetchTopStories() async -> [Story] {
+                  NotificationCenter.default.post(name: Notification.Name(rawValue: "EmergeMetricStarted"), object: nil, userInfo: [
+                    "metric": "FETCH_STORIES"
+                  ])
+                  let url = URL(string: "https://hacker-news.firebaseio.com/v0/topstories.json")!
+
+                  do {
+                    let (data, response) = try await URLSession.shared.data(from: url)
+                    if Flags.isEnabled(.networkDebugger) {
+                      NetworkDebugger.printStats(for: response)
+                    }
+                    let decoder = JSONDecoder()
+                    let storyIds = try decoder.decode([Int64].self, from: data)
+                    let items = await fetchItems(ids: Array(storyIds.prefix(20)))
+
+                    NotificationCenter.default.post(name: Notification.Name(rawValue: "EmergeMetricEnded"), object: nil, userInfo: [
+                      "metric": "FETCH_STORIES"
+                    ])
+                    return items.compactMap { $0 as? Story }
+                  } catch {
+                    print("Error fetching post IDs: \(error)")
+                    return []
+                  }
+                }
+              }
+            SWIFT
+
+            expected_contents = <<~SWIFT
+              //
+              //  HackerNewsAPI.swift
+              //  Hacker News
+              //
+              //  Created by Trevor Elkins on 6/20/23.
+              //
+
+              import Foundation
+
+              class HNApi {
+
+                init() {}
+
+                func fetchTopStories() async -> [Story] {
+                  NotificationCenter.default.post(name: Notification.Name(rawValue: "EmergeMetricStarted"), object: nil, userInfo: [
+                    "metric": "FETCH_STORIES"
+                  ])
+                  let url = URL(string: "https://hacker-news.firebaseio.com/v0/topstories.json")!
+
+                  do {
+                    let (data, response) = try await URLSession.shared.data(from: url)
+                    let decoder = JSONDecoder()
+                    let storyIds = try decoder.decode([Int64].self, from: data)
+                    let items = await fetchItems(ids: Array(storyIds.prefix(20)))
+
+                    NotificationCenter.default.post(name: Notification.Name(rawValue: "EmergeMetricEnded"), object: nil, userInfo: [
+                      "metric": "FETCH_STORIES"
+                    ])
+                    return items.compactMap { $0 as? Story }
+                  } catch {
+                    print("Error fetching post IDs: \(error)")
+                    return []
+                  }
+                }
+              }
+            SWIFT
+
+            modified_contents = parser.delete_usage(
+              file_contents: file_contents,
+              type_name: 'NetworkDebugger'
+            )
+            assert_equal expected_contents, modified_contents
+          end
+        end
+
         describe 'find_usages' do
           def test_finds_usages_of_protocol
             language = 'swift'
