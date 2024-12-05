@@ -52,7 +52,6 @@ module EmergeCLI
 
           # Second pass: Delete remaining usages (unless skipped)
           next if @skip_delete_usages
-          # Re-scan for usages since line numbers may have changed
           identifier_usages = found_usages.select do |usage|
             usage[:usages].any? do |u|
               u[:usage_type] == 'identifier'
@@ -184,7 +183,6 @@ module EmergeCLI
         found_usages
       end
 
-      # New method to handle deletion of type usages
       def delete_usages_from_file(full_path, type_name)
         return unless File.exist?(full_path)
 
