@@ -276,24 +276,12 @@ module EmergeCLI
                :parameter, # func example(param: DeletedType)
                :type_annotation, # : DeletedType
                :argument, # functionCall(param: DeletedType)
-               :import_declaration, # import DeletedType
-               :navigation_expression # NetworkDebugger.printStats
-            if current.type == :navigation_expression
-              # If this navigation expression is part of a call, remove the entire call
-              parent_call = current.parent
-              if parent_call && parent_call.type == :call_expression
-                Logger.debug 'Found call expression containing navigation expression'
-                # Check if this call is the only statement in an if condition
-                if_statement = find_parent_if_statement(parent_call)
-                if if_statement && contains_single_statement?(if_statement)
-                  Logger.debug 'Found if statement with single call, removing entire if block'
-                  return if_statement
-                end
-                return parent_call
-              end
-            end
+               :import_declaration # import DeletedType
             Logger.debug "Found removable parent node of type: #{current.type}"
             return current
+          when :navigation_expression # NetworkDebugger.printStats
+            result = handle_navigation_expression(current)
+            return result if result
           when :class_declaration, :function_declaration, :method_declaration
             Logger.debug "Reached structural element, stopping at: #{current.type}"
             break
@@ -303,6 +291,21 @@ module EmergeCLI
 
         Logger.debug 'No better parent found, returning original node'
         node
+      end
+
+      def handle_navigation_expression(navigation_node)
+        # If this navigation expression is part of a call, remove the entire call
+        parent_call = navigation_node.parent
+        return nil unless parent_call && parent_call.type == :call_expression
+
+        Logger.debug 'Found call expression containing navigation expression'
+        # Check if this call is the only statement in an if condition
+        if_statement = find_parent_if_statement(parent_call)
+        if if_statement && contains_single_statement?(if_statement)
+          Logger.debug 'Found if statement with single call, removing entire if block'
+          return if_statement
+        end
+        parent_call
       end
 
       def find_parent_if_statement(node)
