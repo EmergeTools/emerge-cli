@@ -51,16 +51,19 @@ module EmergeCLI
           end
 
           # Second pass: Delete remaining usages (unless skipped)
-          unless @skip_delete_usages
-            # Re-scan for usages since line numbers may have changed
-            identifier_usages = found_usages.select { |usage| usage[:usages].any? { |u| u[:usage_type] == 'identifier' } }
-            identifier_usage_paths = identifier_usages.map { |usage| usage[:path] }.uniq
-            identifier_usage_paths.each do |path|
-              full_path = File.join(@project_root, path)
-              Logger.debug "Processing usages in path: #{path}"
-              @profiler.measure('delete_usages_from_file') do
-                delete_usages_from_file(full_path, type_name)
-              end
+          next if @skip_delete_usages
+          # Re-scan for usages since line numbers may have changed
+          identifier_usages = found_usages.select do |usage|
+            usage[:usages].any? do |u|
+              u[:usage_type] == 'identifier'
+            end
+          end
+          identifier_usage_paths = identifier_usages.map { |usage| usage[:path] }.uniq
+          identifier_usage_paths.each do |path|
+            full_path = File.join(@project_root, path)
+            Logger.debug "Processing usages in path: #{path}"
+            @profiler.measure('delete_usages_from_file') do
+              delete_usages_from_file(full_path, type_name)
             end
           end
         end

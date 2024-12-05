@@ -16,7 +16,8 @@ module EmergeCLI
 
       option :profile, type: :boolean, default: false, desc: 'Enable performance profiling metrics'
 
-      option :skip_delete_usages, type: :boolean, default: false, desc: "Skip deleting usages of the type (experimental feature)"
+      option :skip_delete_usages, type: :boolean, default: false,
+                                  desc: 'Skip deleting usages of the type (experimental feature)'
 
       def initialize(network: nil)
         @network = network

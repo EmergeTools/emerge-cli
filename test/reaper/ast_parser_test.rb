@@ -459,7 +459,7 @@ module EmergeCLI
                     ])
                     return items.compactMap { $0 as? Story }
                   } catch {
-                    print("Error fetching post IDs: \(error)")
+                    print("Error fetching post IDs: (error)")
                     return []
                   }
                 }
@@ -497,7 +497,7 @@ module EmergeCLI
                     ])
                     return items.compactMap { $0 as? Story }
                   } catch {
-                    print("Error fetching post IDs: \(error)")
+                    print("Error fetching post IDs: (error)")
                     return []
                   }
                 }

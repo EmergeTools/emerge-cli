@@ -159,7 +159,7 @@ module EmergeCLI
               Logger.debug "Node text to remove: #{node_text(removable_node)}"
               nodes_to_remove << removable_node
             else
-              Logger.debug "No suitable parent node found for removal"
+              Logger.debug 'No suitable parent node found for removal'
             end
           end
 
@@ -282,11 +282,11 @@ module EmergeCLI
               # If this navigation expression is part of a call, remove the entire call
               parent_call = current.parent
               if parent_call && parent_call.type == :call_expression
-                Logger.debug "Found call expression containing navigation expression"
+                Logger.debug 'Found call expression containing navigation expression'
                 # Check if this call is the only statement in an if condition
                 if_statement = find_parent_if_statement(parent_call)
                 if if_statement && contains_single_statement?(if_statement)
-                  Logger.debug "Found if statement with single call, removing entire if block"
+                  Logger.debug 'Found if statement with single call, removing entire if block'
                   return if_statement
                 end
                 return parent_call
@@ -301,7 +301,7 @@ module EmergeCLI
           current = current.parent
         end
 
-        Logger.debug "No better parent found, returning original node"
+        Logger.debug 'No better parent found, returning original node'
         node
       end
 
@@ -311,26 +311,26 @@ module EmergeCLI
         while current && !current.null?
           Logger.debug "  Checking node type: #{current.type}"
           if current.type == :if_statement
-            Logger.debug "  Found parent if statement"
+            Logger.debug '  Found parent if statement'
             return current
           end
           current = current.parent
         end
-        Logger.debug "  No parent if statement found"
+        Logger.debug '  No parent if statement found'
         nil
       end
 
       def contains_single_statement?(if_statement)
-        Logger.debug "Checking if statement for single statement"
+        Logger.debug 'Checking if statement for single statement'
         # Find the block/body of the if statement - try different field names based on language
         block = if_statement.child_by_field_name('consequence') ||
-                 if_statement.child_by_field_name('body') ||
-                 if_statement.find { |child| child.type == :statements }
+                if_statement.child_by_field_name('body') ||
+                if_statement.find { |child| child.type == :statements }
 
         unless block
-          Logger.debug "  No block found in if statement. Node structure:"
+          Logger.debug '  No block found in if statement. Node structure:'
           Logger.debug "  If statement type: #{if_statement.type}"
-          Logger.debug "  Children types:"
+          Logger.debug '  Children types:'
           if_statement.each do |child|
             Logger.debug "    - #{child.type} (text: #{node_text(child)[0..50]}...)"
           end
@@ -340,7 +340,7 @@ module EmergeCLI
         Logger.debug "  Found block of type: #{block.type}"
 
         relevant_children = block.reject do |child|
-          [:comment, :line_break, :whitespace].include?(child.type)
+          %i[comment line_break whitespace].include?(child.type)
         end
 
         Logger.debug "  Found #{relevant_children.length} significant children in if block"
@@ -366,7 +366,7 @@ module EmergeCLI
 
         # Restore the original newline state
         modified_contents.chomp!
-        had_final_newline ? modified_contents + "\n" : modified_contents
+        had_final_newline ? "#{modified_contents}\n" : modified_contents
       end
 
       def remove_single_node(content, node)
@@ -397,7 +397,7 @@ module EmergeCLI
         next_line = node_end_line + 1 < lines.length ? lines[node_end_line + 1] : nil
 
         if prev_line && next_line && prev_line.match?(/^\s*$/) && next_line.match?(/^\s*$/)
-          Logger.debug "Found consecutive blank lines after removal"
+          Logger.debug 'Found consecutive blank lines after removal'
           Logger.debug "  Previous line (#{node_start_line - 1}): '#{prev_line}'"
           Logger.debug "  Next line (#{node_end_line + 1}): '#{next_line}'"
           # Remove one of the blank lines to prevent double spacing
