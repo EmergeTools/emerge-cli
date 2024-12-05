@@ -391,9 +391,7 @@ module EmergeCLI
         lines = content.split("\n")
 
         # Check for consecutive blank lines around the removed content
-        if consecutive_blank_lines?(lines, start_line, end_line)
-          lines[start_line - 1] = nil
-        end
+        lines[start_line - 1] = nil if consecutive_blank_lines?(lines, start_line, end_line)
 
         # Remove any blank lines left in the removed node's place
         (start_line..end_line).each do |i|
