@@ -23,6 +23,7 @@ module EmergeCLI
       def call(**options)
         @options = options
         @profiler = EmergeCLI::Profiler.new(enabled: options[:profile])
+        @prompt = TTY::Prompt.new
         before(options)
         success = false
 
@@ -88,8 +89,6 @@ module EmergeCLI
       def prompt_class_selection(unseen_classes)
         return nil if unseen_classes.empty?
 
-        prompt = TTY::Prompt.new
-
         choices = unseen_classes.map do |item|
           display_name = if item['paths']&.first
                            "#{item['class_name']} (#{item['paths'].first})"
@@ -102,7 +101,7 @@ module EmergeCLI
           }
         end
 
-        prompt.multi_select(
+        @prompt.multi_select(
           'Select classes to delete:'.blue,
           choices,
           per_page: 15,
@@ -113,8 +112,7 @@ module EmergeCLI
       end
 
       def confirm_deletion(count)
-        prompt = TTY::Prompt.new
-        prompt.yes?("Are you sure you want to delete #{count} class#{count > 1 ? 'es' : ''}?")
+        @prompt.yes?("Are you sure you want to delete #{count} type#{count > 1 ? 's' : ''}?")
       end
 
       class DeadCodeResult
