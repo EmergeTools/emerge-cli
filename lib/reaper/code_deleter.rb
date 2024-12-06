@@ -3,10 +3,11 @@ require 'xcodeproj'
 module EmergeCLI
   module Reaper
     class CodeDeleter
-      def initialize(project_root:, platform:, profiler:)
+      def initialize(project_root:, platform:, profiler:, skip_delete_usages: false)
         @project_root = File.expand_path(project_root)
         @platform = platform
         @profiler = profiler
+        @skip_delete_usages = skip_delete_usages
         Logger.debug "Initialized CodeDeleter with project root: #{@project_root}, platform: #{@platform}"
       end
 
@@ -38,6 +39,7 @@ module EmergeCLI
             Logger.info "Found #{type_name} in: #{paths.join(', ')}"
           end
 
+          # First pass: Delete declarations
           paths.each do |path|
             path = path.sub(%r{^/}, '')
             full_path = File.join(@project_root, path)
@@ -45,6 +47,29 @@ module EmergeCLI
             Logger.debug "Resolved full path: #{full_path}"
             @profiler.measure('delete_type_from_file') do
               delete_type_from_file(full_path, type_name)
+            end
+          end
+
+          # Second pass: Delete remaining usages (unless skipped)
+          if @skip_delete_usages
+            Logger.info 'Skipping delete usages'
+          else
+            identifier_usages = found_usages.select do |usage|
+              usage[:usages].any? do |u|
+                u[:usage_type] == 'identifier'
+              end
+            end
+            identifier_usage_paths = identifier_usages.map { |usage| usage[:path] }.uniq
+            if identifier_usage_paths.empty?
+              Logger.info 'No identifier usages found, skipping delete usages'
+            else
+              identifier_usage_paths.each do |path|
+                full_path = File.join(@project_root, path)
+                Logger.debug "Processing usages in path: #{path}"
+                @profiler.measure('delete_usages_from_file') do
+                  delete_usages_from_file(full_path, type_name)
+                end
+              end
             end
           end
         end
@@ -58,18 +83,9 @@ module EmergeCLI
           return
         end
 
-        language = case File.extname(full_path)
-                   when '.swift' then 'swift'
-                   when '.kt' then 'kotlin'
-                   when '.java' then 'java'
-                   else
-                     Logger.warn "Unsupported file type for #{full_path}"
-                     return
-                   end
-
         begin
           original_contents = @profiler.measure('read_file') { File.read(full_path) }
-          parser = AstParser.new(language)
+          parser = create_parser_for_file(full_path)
           modified_contents = @profiler.measure('parse_and_delete_type') do
             parser.delete_type(
               file_contents: original_contents,
@@ -81,7 +97,7 @@ module EmergeCLI
             @profiler.measure('delete_file') do
               File.delete(full_path)
             end
-            if language == 'swift'
+            if parser.language == 'swift'
               @profiler.measure('delete_type_from_xcode_project') do
                 delete_type_from_xcode_project(full_path)
               end
@@ -141,11 +157,10 @@ module EmergeCLI
                           end
 
         source_patterns.each do |language, pattern|
-          # Exclude files in build directories, e.g. for Android
           Dir.glob(File.join(@project_root, pattern)).reject { |path| path.include?('/build/') }.each do |file_path|
             Logger.debug "Scanning #{file_path} for #{type_name}"
             contents = File.read(file_path)
-            parser = AstParser.new(language)
+            parser = create_parser_for_file(file_path)
             usages = parser.find_usages(file_contents: contents, type_name: type_name)
 
             if usages.any?
@@ -163,6 +178,38 @@ module EmergeCLI
         end
 
         found_usages
+      end
+
+      def delete_usages_from_file(full_path, type_name)
+        return unless File.exist?(full_path)
+
+        begin
+          original_contents = File.read(full_path)
+          parser = create_parser_for_file(full_path)
+          modified_contents = parser.delete_usage(
+            file_contents: original_contents,
+            type_name: type_name
+          )
+
+          if modified_contents != original_contents
+            File.write(full_path, modified_contents)
+            Logger.info "Successfully removed usages of #{type_name} from #{full_path}"
+          end
+        rescue StandardError => e
+          Logger.error "Failed to delete usages of #{type_name} from #{full_path}: #{e.message}"
+          Logger.error e.backtrace.join("\n")
+        end
+      end
+
+      def create_parser_for_file(file_path)
+        language = case File.extname(file_path)
+                   when '.swift' then 'swift'
+                   when '.kt' then 'kotlin'
+                   when '.java' then 'java'
+                   else
+                     raise "Unsupported file type for #{file_path}"
+                   end
+        AstParser.new(language)
       end
     end
   end

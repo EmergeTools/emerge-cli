@@ -16,6 +16,9 @@ module EmergeCLI
 
       option :profile, type: :boolean, default: false, desc: 'Enable performance profiling metrics'
 
+      option :skip_delete_usages, type: :boolean, default: false,
+                                  desc: 'Skip deleting usages of the type (experimental feature)'
+
       def initialize(network: nil)
         @network = network
       end
@@ -57,7 +60,8 @@ module EmergeCLI
             deleter = EmergeCLI::Reaper::CodeDeleter.new(
               project_root: project_root,
               platform: platform,
-              profiler: @profiler
+              profiler: @profiler,
+              skip_delete_usages: options[:skip_delete_usages]
             )
             @profiler.measure('delete_types') { deleter.delete_types(selected_types) }
           end
