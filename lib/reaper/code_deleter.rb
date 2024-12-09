@@ -137,29 +137,26 @@ module EmergeCLI
           path = path[1..] # Remove leading slash
           full_path = File.join(@project_root, path)
           return full_path if File.exist?(full_path)
-        else
-          # Try direct path first
-          full_path = File.join(@project_root, path)
-          return full_path if File.exist?(full_path)
-
-          # If not found, search recursively
-          Logger.debug "File not found at #{full_path}, searching in project..."
-          matching_files = Dir.glob(File.join(@project_root, '**', path))
-                              .reject { |p| p.include?('/build/') }
-
-          if matching_files.empty?
-            Logger.warn "Could not find #{path} in project"
-            return nil
-          elsif matching_files.length > 1
-            Logger.warn "Found multiple matches for #{path}: #{matching_files.join(', ')}"
-            Logger.warn "Using first match: #{matching_files.first}"
-          end
-
-          return matching_files.first
         end
 
-        Logger.warn "Could not find #{path} in project"
-        nil
+        # Try direct path first
+        full_path = File.join(@project_root, path)
+        return full_path if File.exist?(full_path)
+
+        # If not found, search recursively
+        Logger.debug "File not found at #{full_path}, searching in project..."
+        matching_files = Dir.glob(File.join(@project_root, '**', path))
+                            .reject { |p| p.include?('/build/') }
+
+        if matching_files.empty?
+          Logger.warn "Could not find #{path} in project"
+          return nil
+        elsif matching_files.length > 1
+          Logger.warn "Found multiple matches for #{path}: #{matching_files.join(', ')}"
+          Logger.warn "Using first match: #{matching_files.first}"
+        end
+
+        matching_files.first
       end
 
       def delete_type_from_xcode_project(file_path)
