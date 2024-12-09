@@ -99,10 +99,7 @@ module EmergeCLI
           Logger.debug "Removing lines #{range[:start]} to #{range[:end]}"
           (range[:start]..range[:end]).each { |i| lines[i] = nil }
 
-          # Remove extra newline before/after class declaration, but only if it's blank
-          if range[:start] - 1 > 0 && !lines[range[:start] - 1].nil? && lines[range[:start] - 1].match?(/^\s*$/)
-            lines[range[:start] - 1] = nil
-          end
+          # Remove extra newline after class declaration, but only if it's blank
           if range[:end] + 1 < lines.length && !lines[range[:end] + 1].nil? && lines[range[:end] + 1].match?(/^\s*$/)
             lines[range[:end] + 1] = nil
           end
@@ -112,7 +109,11 @@ module EmergeCLI
         new_tree = @parser.parse_string(nil, modified_source)
 
         return nil if only_comments_and_imports?(TreeSitter::TreeCursor.new(new_tree.root_node))
-        modified_source
+
+        # Preserve original newline state
+        had_final_newline = file_contents.end_with?("\n")
+        modified_source = modified_source.rstrip
+        had_final_newline ? "#{modified_source}\n" : modified_source
       end
 
       # Finds all usages of a given type in a file.

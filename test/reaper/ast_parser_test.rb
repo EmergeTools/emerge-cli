@@ -8,7 +8,7 @@ module EmergeCLI
           def test_removes_protocol_from_swift_file
             language = 'swift'
             parser = AstParser.new(language)
-            file_contents = <<~SWIFT
+            file_contents = <<~SWIFT.strip
               //
               //  NetworkDebugger.swift
               //  Hacker News
@@ -27,7 +27,7 @@ module EmergeCLI
               }
             SWIFT
 
-            expected_contents = <<~SWIFT
+            expected_contents = <<~SWIFT.strip
               //
               //  NetworkDebugger.swift
               //  Hacker News
@@ -52,7 +52,7 @@ module EmergeCLI
           def test_removes_class_from_swift_file
             language = 'swift'
             parser = AstParser.new(language)
-            file_contents = <<~SWIFT
+            file_contents = <<~SWIFT.strip
               //
               //  NetworkDebugger.swift
               //  Hacker News
@@ -94,7 +94,7 @@ module EmergeCLI
               }
             SWIFT
 
-            expected_contents = <<~SWIFT
+            expected_contents = <<~SWIFT.strip
               //
               //  NetworkDebugger.swift
               //  Hacker News
@@ -119,7 +119,7 @@ module EmergeCLI
           def test_removes_class_and_deletes_file
             language = 'swift'
             parser = AstParser.new(language)
-            file_contents = <<~SWIFT
+            file_contents = <<~SWIFT.strip
               //
               //  NetworkDebugger.swift
               //  Hacker News
@@ -167,7 +167,7 @@ module EmergeCLI
           def test_deletes_nested_class_with_extensions
             language = 'swift'
             parser = AstParser.new(language)
-            file_contents = <<~SWIFT
+            file_contents = <<~SWIFT.strip
               //
               //  AppStateViewModel.swift
               //  Hacker News
@@ -246,7 +246,7 @@ module EmergeCLI
               }
             SWIFT
 
-            expected_contents = <<~SWIFT
+            expected_contents = <<~SWIFT.strip
               //
               //  AppStateViewModel.swift
               //  Hacker News
@@ -425,7 +425,7 @@ module EmergeCLI
           def test_deletes_usage_of_class_inside_call_expression
             language = 'swift'
             parser = AstParser.new(language)
-            file_contents = <<~SWIFT
+            file_contents = <<~SWIFT.strip
               //
               //  HackerNewsAPI.swift
               //  Hacker News
@@ -466,7 +466,7 @@ module EmergeCLI
               }
             SWIFT
 
-            expected_contents = <<~SWIFT
+            expected_contents = <<~SWIFT.strip
               //
               //  HackerNewsAPI.swift
               //  Hacker News
@@ -516,7 +516,7 @@ module EmergeCLI
           def test_finds_usages_of_protocol
             language = 'swift'
             parser = AstParser.new(language)
-            file_contents = <<~SWIFT
+            file_contents = <<~SWIFT.strip
               // Test file
               struct MyStruct { }
 
@@ -541,7 +541,7 @@ module EmergeCLI
           def test_finds_usages_of_class
             language = 'swift'
             parser = AstParser.new(language)
-            file_contents = <<~SWIFT
+            file_contents = <<~SWIFT.strip
               //
               //  HackerNewsAPI.swift
               //  Hacker News
@@ -1028,6 +1028,7 @@ module EmergeCLI
                   val kids: List<Long>? = null,
                   val text: String? = null
                 ) : ItemResponse
+
               }
 
               private object ItemResponseSerializer :
