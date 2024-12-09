@@ -236,7 +236,9 @@ module EmergeCLI
       end
 
       def parse_type_name(class_name)
+        # rubocop:disable Layout/LineLength
         # Handle cases like "com.emergetools.hackernews.data.remote.ItemResponse $NullResponse (HackerNewsBaseClient.kt)"
+        # rubocop:enable Layout/LineLength
         type_name = if class_name.include?('$') && class_name.match(/\((.*?)\)/)
                       base_name = class_name.split('$').first.strip
                       nested_class = class_name.split('$')[1].split('(').first.strip
