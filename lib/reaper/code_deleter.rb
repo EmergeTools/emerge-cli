@@ -70,6 +70,28 @@ module EmergeCLI
 
       private
 
+      def parse_type_name(type_name)
+        # Remove first module prefix for Swift types if present
+        if @platform == 'ios' && type_name.include?('.')
+          type_name.split('.')[1..].join('.')
+        # For Android, strip package name and just use the class name
+        elsif @platform == 'android' && type_name.include?('.')
+          # rubocop:disable Layout/LineLength
+          # Handle cases like "com.emergetools.hackernews.data.remote.ItemResponse $NullResponse (HackerNewsBaseClient.kt)"
+          # rubocop:enable Layout/LineLength
+          type_name = if type_name.include?('$') && type_name.match(/\((.*?)\)/)
+            base_name = type_name.split('$').first.strip
+            nested_class = type_name.split('$')[1].split('(').first.strip
+            "#{base_name}.#{nested_class}"
+          else
+            type_name
+          end
+          type_name.split('.').last(2).join('.')
+        else
+          type_name
+        end
+      end
+
       def delete_type_from_file(path, type_name)
         full_path = resolve_file_path(path)
         return unless full_path
@@ -77,7 +99,7 @@ module EmergeCLI
         Logger.debug "Processing file: #{full_path}"
         begin
           original_contents = @profiler.measure('read_file') { File.read(full_path) }
-          parser = create_parser_for_file(full_path)
+          parser = make_parser_for_file(full_path)
           modified_contents = @profiler.measure('parse_and_delete_type') do
             parser.delete_type(
               file_contents: original_contents,
@@ -183,7 +205,7 @@ module EmergeCLI
           Dir.glob(File.join(@project_root, pattern)).reject { |path| path.include?('/build/') }.each do |file_path|
             Logger.debug "Scanning #{file_path} for #{type_name}"
             contents = File.read(file_path)
-            parser = create_parser_for_file(file_path)
+            parser = make_parser_for_file(file_path)
             usages = parser.find_usages(file_contents: contents, type_name: type_name)
 
             if usages.any?
@@ -208,7 +230,7 @@ module EmergeCLI
 
         begin
           original_contents = File.read(full_path)
-          parser = create_parser_for_file(full_path)
+          parser = make_parser_for_file(full_path)
           modified_contents = parser.delete_usage(
             file_contents: original_contents,
             type_name: type_name
@@ -224,7 +246,7 @@ module EmergeCLI
         end
       end
 
-      def create_parser_for_file(file_path)
+      def make_parser_for_file(file_path)
         language = case File.extname(file_path)
                    when '.swift' then 'swift'
                    when '.kt' then 'kotlin'
@@ -233,31 +255,6 @@ module EmergeCLI
                      raise "Unsupported file type for #{file_path}"
                    end
         AstParser.new(language)
-      end
-
-      def parse_type_name(class_name)
-        # rubocop:disable Layout/LineLength
-        # Handle cases like "com.emergetools.hackernews.data.remote.ItemResponse $NullResponse (HackerNewsBaseClient.kt)"
-        # rubocop:enable Layout/LineLength
-        type_name = if class_name.include?('$') && class_name.match(/\((.*?)\)/)
-                      base_name = class_name.split('$').first.strip
-                      nested_class = class_name.split('$')[1].split('(').first.strip
-
-                      # For nested classes in Kotlin/Java, we use the format OuterClass.InnerClass
-                      "#{base_name}.#{nested_class}"
-                    else
-                      class_name
-                    end
-
-        # Remove first module prefix for Swift types if present
-        if @platform == 'ios' && type_name.include?('.')
-          type_name.split('.')[1..].join('.')
-        # For Android, strip package name and just use the class name
-        elsif @platform == 'android' && type_name.include?('.')
-          type_name.split('.').last(2).join('.')
-        else
-          type_name
-        end
       end
     end
   end
