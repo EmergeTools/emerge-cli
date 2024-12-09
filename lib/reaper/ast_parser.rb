@@ -8,7 +8,7 @@ module EmergeCLI
     class AstParser
       DECLARATION_NODE_TYPES = {
         'swift' => %i[class_declaration protocol_declaration],
-        'kotlin' => %i[class_declaration protocol_declaration interface_declaration],
+        'kotlin' => %i[class_declaration protocol_declaration interface_declaration object_declaration],
         'java' => %i[class_declaration protocol_declaration interface_declaration]
       }.freeze
 
@@ -109,7 +109,11 @@ module EmergeCLI
         new_tree = @parser.parse_string(nil, modified_source)
 
         return nil if only_comments_and_imports?(TreeSitter::TreeCursor.new(new_tree.root_node))
-        modified_source
+
+        # Preserve original newline state
+        had_final_newline = file_contents.end_with?("\n")
+        modified_source = modified_source.rstrip
+        had_final_newline ? "#{modified_source}\n" : modified_source
       end
 
       # Finds all usages of a given type in a file.
@@ -223,6 +227,7 @@ module EmergeCLI
           parent = find_parent_type_declaration(parent)
         end
 
+        Logger.debug "Fully qualified type name: #{class_name}"
         class_name
       end
 
