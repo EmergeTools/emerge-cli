@@ -17,9 +17,8 @@ module EmergeCLI
         types.each do |class_info|
           Logger.info "Deleting #{class_info['class_name']}"
 
-          type_name = class_info['class_name']
-          # Remove first module prefix for Swift types if present
-          type_name = type_name.split('.')[1..].join('.') if @platform == 'ios' && type_name.include?('.')
+          type_name = parse_type_name(class_info['class_name'])
+          Logger.debug "Parsed type name: #{type_name}"
 
           # Remove line number from path if present
           paths = class_info['paths']&.map { |path| path.sub(/:\d+$/, '') }
@@ -41,12 +40,9 @@ module EmergeCLI
 
           # First pass: Delete declarations
           paths.each do |path|
-            path = path.sub(%r{^/}, '')
-            full_path = File.join(@project_root, path)
             Logger.debug "Processing path: #{path}"
-            Logger.debug "Resolved full path: #{full_path}"
             @profiler.measure('delete_type_from_file') do
-              delete_type_from_file(full_path, type_name)
+              delete_type_from_file(path, type_name)
             end
           end
 
@@ -55,19 +51,16 @@ module EmergeCLI
             Logger.info 'Skipping delete usages'
           else
             identifier_usages = found_usages.select do |usage|
-              usage[:usages].any? do |u|
-                u[:usage_type] == 'identifier'
-              end
+              usage[:usages].any? { |u| u[:usage_type] == 'identifier' }
             end
             identifier_usage_paths = identifier_usages.map { |usage| usage[:path] }.uniq
             if identifier_usage_paths.empty?
               Logger.info 'No identifier usages found, skipping delete usages'
             else
               identifier_usage_paths.each do |path|
-                full_path = File.join(@project_root, path)
                 Logger.debug "Processing usages in path: #{path}"
                 @profiler.measure('delete_usages_from_file') do
-                  delete_usages_from_file(full_path, type_name)
+                  delete_usages_from_file(path, type_name)
                 end
               end
             end
@@ -77,12 +70,11 @@ module EmergeCLI
 
       private
 
-      def delete_type_from_file(full_path, type_name)
-        if !File.exist?(full_path)
-          Logger.warn "File does not exist: #{full_path}"
-          return
-        end
+      def delete_type_from_file(path, type_name)
+        full_path = resolve_file_path(path)
+        return unless full_path
 
+        Logger.debug "Processing file: #{full_path}"
         begin
           original_contents = @profiler.measure('read_file') { File.read(full_path) }
           parser = create_parser_for_file(full_path)
@@ -115,6 +107,37 @@ module EmergeCLI
           Logger.error "Failed to delete #{type_name} from #{full_path}: #{e.message}"
           Logger.error e.backtrace.join("\n")
         end
+      end
+
+      def resolve_file_path(path)
+        # If path starts with /, treat it as relative to project root
+        if path.start_with?('/')
+          path = path[1..]  # Remove leading slash
+          full_path = File.join(@project_root, path)
+          return full_path if File.exist?(full_path)
+        else
+          # Try direct path first
+          full_path = File.join(@project_root, path)
+          return full_path if File.exist?(full_path)
+
+          # If not found, search recursively
+          Logger.debug "File not found at #{full_path}, searching in project..."
+          matching_files = Dir.glob(File.join(@project_root, "**", path))
+                             .reject { |p| p.include?('/build/') }
+
+          if matching_files.empty?
+            Logger.warn "Could not find #{path} in project"
+            return nil
+          elsif matching_files.length > 1
+            Logger.warn "Found multiple matches for #{path}: #{matching_files.join(', ')}"
+            Logger.warn "Using first match: #{matching_files.first}"
+          end
+
+          return matching_files.first
+        end
+
+        Logger.warn "Could not find #{path} in project"
+        nil
       end
 
       def delete_type_from_xcode_project(file_path)
@@ -210,6 +233,29 @@ module EmergeCLI
                      raise "Unsupported file type for #{file_path}"
                    end
         AstParser.new(language)
+      end
+
+      def parse_type_name(class_name)
+        # Handle cases like "com.emergetools.hackernews.data.remote.ItemResponse $NullResponse (HackerNewsBaseClient.kt)"
+        type_name = if class_name.include?('$') && class_name.match(/\((.*?)\)/)
+          base_name = class_name.split('$').first.strip
+          nested_class = class_name.split('$')[1].split('(').first.strip
+
+          # For nested classes in Kotlin/Java, we use the format OuterClass.InnerClass
+          "#{base_name}.#{nested_class}"
+        else
+          class_name
+        end
+
+        # Remove first module prefix for Swift types if present
+        if @platform == 'ios' && type_name.include?('.')
+          type_name.split('.')[1..].join('.')
+        # For Android, strip package name and just use the class name
+        elsif @platform == 'android' && type_name.include?('.')
+          type_name.split('.').last(2).join('.')
+        else
+          type_name
+        end
       end
     end
   end
