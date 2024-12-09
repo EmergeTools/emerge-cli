@@ -8,7 +8,7 @@ module EmergeCLI
     class AstParser
       DECLARATION_NODE_TYPES = {
         'swift' => %i[class_declaration protocol_declaration],
-        'kotlin' => %i[class_declaration protocol_declaration interface_declaration],
+        'kotlin' => %i[class_declaration protocol_declaration interface_declaration, object_declaration],
         'java' => %i[class_declaration protocol_declaration interface_declaration]
       }.freeze
 
@@ -223,6 +223,7 @@ module EmergeCLI
           parent = find_parent_type_declaration(parent)
         end
 
+        Logger.debug "Fully qualified type name: #{class_name}"
         class_name
       end
 
