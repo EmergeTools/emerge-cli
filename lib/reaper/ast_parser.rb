@@ -8,7 +8,7 @@ module EmergeCLI
     class AstParser
       DECLARATION_NODE_TYPES = {
         'swift' => %i[class_declaration protocol_declaration],
-        'kotlin' => %i[class_declaration protocol_declaration interface_declaration, object_declaration],
+        'kotlin' => %i[class_declaration protocol_declaration interface_declaration object_declaration],
         'java' => %i[class_declaration protocol_declaration interface_declaration]
       }.freeze
 
@@ -100,8 +100,8 @@ module EmergeCLI
           (range[:start]..range[:end]).each { |i| lines[i] = nil }
 
           # Remove extra newline before/after class declaration, but only if it's blank
-          if range[:start] -1 > 0 && !lines[range[:start] - 1].nil? && lines[range[:start] - 1].match?(/^\s*$/)
-            lines[range[:start] -1] = nil
+          if range[:start] - 1 > 0 && !lines[range[:start] - 1].nil? && lines[range[:start] - 1].match?(/^\s*$/)
+            lines[range[:start] - 1] = nil
           end
           if range[:end] + 1 < lines.length && !lines[range[:end] + 1].nil? && lines[range[:end] + 1].match?(/^\s*$/)
             lines[range[:end] + 1] = nil

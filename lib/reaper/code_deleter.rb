@@ -112,7 +112,7 @@ module EmergeCLI
       def resolve_file_path(path)
         # If path starts with /, treat it as relative to project root
         if path.start_with?('/')
-          path = path[1..]  # Remove leading slash
+          path = path[1..] # Remove leading slash
           full_path = File.join(@project_root, path)
           return full_path if File.exist?(full_path)
         else
@@ -122,8 +122,8 @@ module EmergeCLI
 
           # If not found, search recursively
           Logger.debug "File not found at #{full_path}, searching in project..."
-          matching_files = Dir.glob(File.join(@project_root, "**", path))
-                             .reject { |p| p.include?('/build/') }
+          matching_files = Dir.glob(File.join(@project_root, '**', path))
+                              .reject { |p| p.include?('/build/') }
 
           if matching_files.empty?
             Logger.warn "Could not find #{path} in project"
@@ -238,14 +238,14 @@ module EmergeCLI
       def parse_type_name(class_name)
         # Handle cases like "com.emergetools.hackernews.data.remote.ItemResponse $NullResponse (HackerNewsBaseClient.kt)"
         type_name = if class_name.include?('$') && class_name.match(/\((.*?)\)/)
-          base_name = class_name.split('$').first.strip
-          nested_class = class_name.split('$')[1].split('(').first.strip
+                      base_name = class_name.split('$').first.strip
+                      nested_class = class_name.split('$')[1].split('(').first.strip
 
-          # For nested classes in Kotlin/Java, we use the format OuterClass.InnerClass
-          "#{base_name}.#{nested_class}"
-        else
-          class_name
-        end
+                      # For nested classes in Kotlin/Java, we use the format OuterClass.InnerClass
+                      "#{base_name}.#{nested_class}"
+                    else
+                      class_name
+                    end
 
         # Remove first module prefix for Swift types if present
         if @platform == 'ios' && type_name.include?('.')
