@@ -829,7 +829,7 @@ module EmergeCLI
             assert_equal expected_contents, updated_contents
           end
 
-          def test_removes_nested_class_from_kotlin_file
+          def test_removes_nested_object_class_from_kotlin_file
             EmergeCLI::Logger.configure(::Logger::DEBUG)
             language = 'kotlin'
             parser = AstParser.new(language)

@@ -99,7 +99,10 @@ module EmergeCLI
           Logger.debug "Removing lines #{range[:start]} to #{range[:end]}"
           (range[:start]..range[:end]).each { |i| lines[i] = nil }
 
-          # Remove extra newline after class declaration, but only if it's blank
+          # Remove extra newline before/after class declaration, but only if it's blank
+          if range[:start] -1 > 0 && !lines[range[:start] - 1].nil? && lines[range[:start] - 1].match?(/^\s*$/)
+            lines[range[:start] -1] = nil
+          end
           if range[:end] + 1 < lines.length && !lines[range[:end] + 1].nil? && lines[range[:end] + 1].match?(/^\s*$/)
             lines[range[:end] + 1] = nil
           end
