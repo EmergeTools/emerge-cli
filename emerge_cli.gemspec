@@ -19,6 +19,7 @@ Gem::Specification.new do |spec|
   # Specify which files should be included in the gem when published
   spec.files = Dir[
     'lib/**/*',
+    'parsers/**/*',
     'LICENSE.txt',
     'README.md',
     'CHANGELOG.md'
