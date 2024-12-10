@@ -80,7 +80,7 @@ module EmergeCLI
           # Handle cases like "com.emergetools.hackernews.data.remote.ItemResponse $NullResponse (HackerNewsBaseClient.kt)"
           # rubocop:enable Layout/LineLength
           has_nested_class = type_name.include?('$')
-          parts = type_name.split(' ')
+          parts = type_name.split
           if parts.length == 0
             type_name
           elsif has_nested_class && parts.length > 1
