@@ -79,14 +79,17 @@ module EmergeCLI
           # rubocop:disable Layout/LineLength
           # Handle cases like "com.emergetools.hackernews.data.remote.ItemResponse $NullResponse (HackerNewsBaseClient.kt)"
           # rubocop:enable Layout/LineLength
-          type_name = if type_name.include?('$') && type_name.match(/\((.*?)\)/)
-                        base_name = type_name.split('$').first.strip
-                        nested_class = type_name.split('$')[1].split('(').first.strip
-                        "#{base_name}.#{nested_class}"
-                      else
-                        type_name
-                      end
-          type_name.split('.').last(2).join('.')
+          has_nested_class = type_name.include?('$')
+          parts = type_name.split(' ')
+          if parts.length == 0
+            type_name
+          elsif has_nested_class && parts.length > 1
+            base_name = parts[0].split('.').last
+            nested_class = parts[1].match(/\$(.+)/).captures.first
+            "#{base_name}.#{nested_class}"
+          else
+            parts[0].split('.').last
+          end
         else
           type_name
         end
