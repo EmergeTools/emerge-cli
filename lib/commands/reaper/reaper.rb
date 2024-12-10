@@ -43,7 +43,7 @@ module EmergeCLI
 
             Logger.info result.to_s
 
-            selected_types = prompt_class_selection(result.filtered_unseen_classes)
+            selected_types = prompt_class_selection(result.filtered_unseen_classes, result.metadata['platform'])
             Logger.info 'Selected classes:'
             selected_types.each do |selected_class|
               Logger.info " - #{selected_class['class_name']}"
@@ -90,11 +90,11 @@ module EmergeCLI
         )
       end
 
-      def prompt_class_selection(unseen_classes)
+      def prompt_class_selection(unseen_classes, platform)
         return nil if unseen_classes.empty?
 
         choices = unseen_classes.map do |item|
-          display_name = if item['paths']&.first
+          display_name = if item['paths']&.first && platform == 'ios'
                            "#{item['class_name']} (#{item['paths'].first})"
                          else
                            item['class_name']
