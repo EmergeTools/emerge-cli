@@ -134,34 +134,6 @@ module EmergeCLI
         end
       end
 
-      def resolve_file_path(path)
-        # If path starts with /, treat it as relative to project root
-        if path.start_with?('/')
-          path = path[1..] # Remove leading slash
-          full_path = File.join(@project_root, path)
-          return full_path if File.exist?(full_path)
-        end
-
-        # Try direct path first
-        full_path = File.join(@project_root, path)
-        return full_path if File.exist?(full_path)
-
-        # If not found, search recursively
-        Logger.debug "File not found at #{full_path}, searching in project..."
-        matching_files = Dir.glob(File.join(@project_root, '**', path))
-                            .reject { |p| p.include?('/build/') }
-
-        if matching_files.empty?
-          Logger.warn "Could not find #{path} in project"
-          return nil
-        elsif matching_files.length > 1
-          Logger.warn "Found multiple matches for #{path}: #{matching_files.join(', ')}"
-          Logger.warn "Using first match: #{matching_files.first}"
-        end
-
-        matching_files.first
-      end
-
       def delete_type_from_xcode_project(file_path)
         xcodeproj_path = Dir.glob(File.join(@project_root, '**/*.xcodeproj')).first
         if xcodeproj_path.nil?
@@ -225,12 +197,14 @@ module EmergeCLI
         found_usages
       end
 
-      def delete_usages_from_file(full_path, type_name)
-        return unless File.exist?(full_path)
+      def delete_usages_from_file(path, type_name)
+        full_path = resolve_file_path(path)
+        return unless full_path
 
         begin
           original_contents = File.read(full_path)
           parser = make_parser_for_file(full_path)
+          Logger.debug "Deleting usages of #{type_name} from #{full_path}"
           modified_contents = parser.delete_usage(
             file_contents: original_contents,
             type_name: type_name
@@ -244,6 +218,34 @@ module EmergeCLI
           Logger.error "Failed to delete usages of #{type_name} from #{full_path}: #{e.message}"
           Logger.error e.backtrace.join("\n")
         end
+      end
+
+      def resolve_file_path(path)
+        # If path starts with /, treat it as relative to project root
+        if path.start_with?('/')
+          path = path[1..] # Remove leading slash
+          full_path = File.join(@project_root, path)
+          return full_path if File.exist?(full_path)
+        end
+
+        # Try direct path first
+        full_path = File.join(@project_root, path)
+        return full_path if File.exist?(full_path)
+
+        # If not found, search recursively
+        Logger.debug "File not found at #{full_path}, searching in project..."
+        matching_files = Dir.glob(File.join(@project_root, '**', path))
+                            .reject { |p| p.include?('/build/') }
+
+        if matching_files.empty?
+          Logger.warn "Could not find #{path} in project"
+          return nil
+        elsif matching_files.length > 1
+          Logger.warn "Found multiple matches for #{path}: #{matching_files.join(', ')}"
+          Logger.warn "Using first match: #{matching_files.first}"
+        end
+
+        matching_files.first
       end
 
       def make_parser_for_file(file_path)
