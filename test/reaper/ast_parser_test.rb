@@ -421,7 +421,7 @@ module EmergeCLI
           end
         end
 
-        describe 'delete_type' do
+        describe 'delete_usage' do
           def test_deletes_usage_of_class_inside_call_expression
             language = 'swift'
             parser = AstParser.new(language)
