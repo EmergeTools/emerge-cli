@@ -91,20 +91,11 @@ module EmergeCLI
           data = JSON.parse(response.read)
 
           if combined_data.nil?
-            combined_data = data  # First page, use as base
+            combined_data = data
           else
-            # Merge dead_code arrays
             combined_data['dead_code'].concat(data.fetch('dead_code', []))
-
-            # Update counts safely
-            counts = combined_data['counts']
-            new_counts = data.dig('counts') || {}
-
-            counts['seen_classes'] += new_counts.fetch('seen_classes', 0)
-            counts['unseen_classes'] += new_counts.fetch('unseen_classes', 0)
           end
 
-          # Check if we've reached the last page
           current_page = data.dig('pagination', 'current_page')
           total_pages = data.dig('pagination', 'total_pages')
 
