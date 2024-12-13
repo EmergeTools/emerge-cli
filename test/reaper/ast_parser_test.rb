@@ -830,7 +830,6 @@ module EmergeCLI
           end
 
           def test_removes_nested_object_class_from_kotlin_file
-            EmergeCLI::Logger.configure(::Logger::DEBUG)
             language = 'kotlin'
             parser = AstParser.new(language)
             file_contents = <<~KOTLIN.strip
