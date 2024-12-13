@@ -14,14 +14,17 @@ module EmergeCLI
         )
         @version_check = VersionCheck.new(network: @network)
 
-        Logger.stub :warn, ->(msg) { @captured_warnings ||= []; @captured_warnings << msg } do
+        Logger.stub :warn, lambda { |msg|
+          @captured_warnings ||= []
+          @captured_warnings << msg
+        } do
           @version_check.check_version
         end
 
         assert_equal 3, @captured_warnings.length
-        assert_match /A new version of emerge-cli is available \(999.0.0\)/, @captured_warnings[0]
-        assert_match /You are currently using version #{EmergeCLI::VERSION}/, @captured_warnings[1]
-        assert_match /To update, run: gem update emerge/, @captured_warnings[2]
+        assert_match(/A new version of emerge-cli is available \(999.0.0\)/, @captured_warnings[0])
+        assert_match(/You are currently using version #{EmergeCLI::VERSION}/, @captured_warnings[1])
+        assert_match(/To update, run: gem update emerge/, @captured_warnings[2])
       end
 
       def test_silent_when_current_version
@@ -30,7 +33,7 @@ module EmergeCLI
         )
         @version_check = VersionCheck.new(network: @network)
 
-        Logger.stub :warn, ->(_msg) { flunk "Should not warn when version is current" } do
+        Logger.stub :warn, ->(_msg) { flunk 'Should not warn when version is current' } do
           @version_check.check_version
         end
       end
@@ -45,7 +48,7 @@ module EmergeCLI
           @version_check.check_version
         end
 
-        assert_equal "Failed to parse version from RubyGems API response", @error_message
+        assert_equal 'Failed to parse version from RubyGems API response', @error_message
       end
     end
   end
