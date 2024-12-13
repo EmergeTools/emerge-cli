@@ -10,6 +10,7 @@ require_relative 'commands/integrate/fastlane'
 require_relative 'commands/config/snapshots/snapshots_ios'
 require_relative 'commands/config/orderfiles/orderfiles_ios'
 require_relative 'commands/reaper/reaper'
+require_relative 'commands/snapshots/validate_binary'
 
 require_relative 'reaper/ast_parser'
 require_relative 'reaper/code_deleter'
@@ -44,6 +45,10 @@ module EmergeCLI
   end
 
   register 'reaper', Commands::Reaper
+
+  register 'snapshots' do |prefix|
+    prefix.register 'validate-binary', Commands::Snapshots::ValidateBinary
+  end
 end
 
 # By default the log level is INFO, but can be overridden by the --debug flag

@@ -10,4 +10,8 @@ group :development, :test do
   gem 'rspec', '~> 3.13.0'
   gem 'rubocop', '~> 1.68.0'
   gem 'simplecov', '~> 0.22.0'
+  gem 'ruby-macho', '~> 4.1.0'
+  gem 'async-http', '~> 0.86.0'
+  gem 'protocol-http', '~> 0.47.0'
+  gem 'CFPropertyList', '~> 2.3', '>= 2.3.2'
 end
