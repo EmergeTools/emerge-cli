@@ -207,10 +207,10 @@ module EmergeCLI
             end
         
             # ProtocolConformanceDescriptor -> ProtocolDescriptor
-            protocol_descriptor = @binary_data[type_file_address, 4].unpack('l<')[0]
+            protocol_descriptor = read_little_endian_signed_integer(@binary_data, type_file_address)
         
             # # ProtocolConformanceDescriptor -> ConformanceFlags
-            conformance_flags = @binary_data[type_file_address+12, 4].unpack('l<')[0]
+            conformance_flags = read_little_endian_signed_integer(@binary_data, type_file_address+12)
             kind = (conformance_flags & TYPE_METADATA_KIND_MASK) >> TYPE_METADATA_KIND_SHIFT
         
             unless kind == 0
@@ -228,7 +228,7 @@ module EmergeCLI
               descriptor_offset = protocol_descriptor & ~1
               jump_ptr = type_file_address + descriptor_offset
         
-              address = @binary_data[jump_ptr, 4].unpack('I<')[0]
+              address = @binary_data[jump_ptr, 4].unpack1('I<')
               symbol_name = imported_symbols[address]
               if SWIFT_PREVIEWS_MANGLED_NAMES.include?(symbol_name)
                 return true
@@ -241,7 +241,7 @@ module EmergeCLI
         def read_next_symbol(binary_data, current_address, end_address, current_symbol)
   
           while current_address < end_address
-            first_byte = binary_data[current_address, 1].unpack('C')[0]
+            first_byte = read_byte(binary_data, current_address)
             current_address += 1
             immediate = first_byte & BIND_IMMEDIATE_MASK
             opcode = first_byte & BIND_OPCODE_MASK
@@ -255,7 +255,7 @@ module EmergeCLI
               current_symbol.symbol = ""
               return [result], current_address, current_symbol
             when BIND_OPCODE_SET_DYLIB_ORDINAL_IMM
-              current_symbol.library = [immediate].pack('L').unpack('L').first
+              current_symbol.library = [immediate].pack('L').unpack1('L')
             when BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM
               current_symbol.symbol = read_null_terminated_string(binary_data[current_address..])
               # Increase current pointer
@@ -303,13 +303,21 @@ module EmergeCLI
           return [], current_address, current_symbol
         end
 
+        def read_byte(binary_data, address)
+          binary_data[address, 1].unpack1('C')
+        end
+
+        def read_little_endian_signed_integer(binary_data, address)
+          binary_data[address, 4].unpack1('l<')
+        end
+
         def read_uleb(binary_data, address)
           next_byte = 0
           size = 0
           result = 0
         
           loop do
-            next_byte = binary_data[address, 1].unpack('C')[0]
+            next_byte = read_byte(binary_data, address)
             address += 1
             bytes = next_byte & 0x7F
             shifted = bytes << (size * 7)
@@ -323,7 +331,7 @@ module EmergeCLI
         end
 
         def read_null_terminated_string(data)
-          data.unpack("Z*").first
+          data.unpack1("Z*")
         end
         
         def vm_address(file_offset, macho)
