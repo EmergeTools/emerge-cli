@@ -5,7 +5,6 @@ require 'yaml'
 require 'macho'
 require 'cfpropertylist'
 
-
 module EmergeCLI
   module Commands
     module Snapshots
@@ -50,13 +49,13 @@ module EmergeCLI
           Sync do
             binary_path = get_binary_path
             Logger.info "Found binary: #{binary_path}"
-            
+
             Logger.info "Loading binary: #{binary_path}"
             load_binary(binary_path)
 
             use_chained_fixups, imported_symbols = read_linkedit_data_command
             bound_symbols = read_dyld_info_only_command
-            
+
             found = find_providers_in_swift_proto(use_chained_fixups, imported_symbols, bound_symbols)
 
             if found
@@ -95,24 +94,25 @@ module EmergeCLI
               chained_fixups_command = lc
             end
           end
-        
+
           if chained_fixups_command.nil?
             Logger.debug 'No LC_DYLD_CHAINED_FIXUPS found'
             return false, []
           end
-        
+
           # linkedit_data_command
-          cmd, cmd_size, dataoff, datasize  = @binary_data[chained_fixups_command.offset, 16].unpack('L<L<L<L<')
-        
-          header = @binary_data[dataoff, datasize].unpack( "L<L<L<L<L<L<L<")
+          cmd, cmd_size, dataoff, datasize = @binary_data[chained_fixups_command.offset, 16].unpack('L<L<L<L<')
+
+          header = @binary_data[dataoff, datasize].unpack("L<L<L<L<L<L<L<")
           # dyld_chained_fixups_header
-          fixups_version, starts_offset, imports_offset, symbols_offset, imports_count, imports_format, symbols_format = header
-        
+          fixups_version, starts_offset, imports_offset, symbols_offset, imports_count, \
+            imports_format, symbols_format = header
+
           imports_start = dataoff + imports_offset
           symbols_start = dataoff + symbols_offset
-        
+
           imported_symbols = []
-        
+
           import_size, name_offset_proc =
             case imports_format
             when 1 # DYLD_CHAINED_IMPORT
@@ -124,7 +124,7 @@ module EmergeCLI
             else
               [4, ->(ptr) { ptr.unpack1('L<') >> 9 }]
             end
-        
+
           # Extract imported symbol names
           imports_count.times do |i|
             import_offset = imports_start + i * import_size
@@ -133,7 +133,7 @@ module EmergeCLI
             name = read_null_terminated_string(@binary_data[name_start..])
             imported_symbols << name
           end
-        
+
           return true, imported_symbols
         end
 
@@ -144,38 +144,39 @@ module EmergeCLI
               dyld_info_only_command = lc
             end
           end
-        
+
           if dyld_info_only_command.nil?
             Logger.debug 'No LC_DYLD_INFO_ONLY found'
             return []
           end
-        
+
           bound_symbols = []
           start_address = dyld_info_only_command.bind_off
           end_address = dyld_info_only_command.bind_off + dyld_info_only_command.bind_size
           current_address = start_address
-        
+
           current_symbol = BoundSymbol.new(segment_offset: 0, library: nil, offset: 0, symbol: "")
-        
+
           count1 = 0
           while current_address < end_address
-            results, current_address, current_symbol = read_next_symbol(@binary_data, current_address, end_address, current_symbol)
-            
+            results, current_address, current_symbol = read_next_symbol(@binary_data, current_address, end_address,
+                                                                        current_symbol)
+
             # Dup items to avoid pointer issues
             results.each do |res|
               bound_symbols << res.dup
             end
           end
-          
+
           # Filter only swift symbols starting with _$s
           swift_symbols = bound_symbols.select { |bound_symbol| bound_symbol.symbol.start_with?("_$s") }
-        
+
           load_commands = @macho_file.load_commands.select { |lc| lc.type == :LC_SEGMENT_64 || lc.type == :LC_SEGMENT }
-          
+
           swift_symbols.each do |swift_symbol|
             swift_symbol.address = load_commands[swift_symbol.segment_offset].vmaddr + swift_symbol.offset
           end
-        
+
           swift_symbols
         end
 
@@ -189,34 +190,34 @@ module EmergeCLI
               end
             end
           end
-        
+
           unless found_section
             Logger.error "The __swift5_proto section was not found."
             return false
           end
-        
+
           start = found_section.offset
           size = found_section.size
           offsets_list = parse_list(@binary_data, start, size)
-        
+
           offsets_list.each do |relative_offset, offset_start|
             type_file_address = offset_start + relative_offset
             if type_file_address <= 0 || type_file_address >= @binary_data.size
               Logger.error "Invalid protocol conformance offset"
               next
             end
-        
+
             # ProtocolConformanceDescriptor -> ProtocolDescriptor
             protocol_descriptor = read_little_endian_signed_integer(@binary_data, type_file_address)
-        
+
             # # ProtocolConformanceDescriptor -> ConformanceFlags
-            conformance_flags = read_little_endian_signed_integer(@binary_data, type_file_address+12)
+            conformance_flags = read_little_endian_signed_integer(@binary_data, type_file_address + 12)
             kind = (conformance_flags & TYPE_METADATA_KIND_MASK) >> TYPE_METADATA_KIND_SHIFT
-        
+
             unless kind == 0
               next
             end
-        
+
             indirect_relative_offset = get_indirect_relative_offset(type_file_address, protocol_descriptor)
 
             bound_symbol = bound_symbols.find { |bound_symbol| bound_symbol.address == indirect_relative_offset }
@@ -227,7 +228,7 @@ module EmergeCLI
             elsif use_chained_fixups
               descriptor_offset = protocol_descriptor & ~1
               jump_ptr = type_file_address + descriptor_offset
-        
+
               address = @binary_data[jump_ptr, 4].unpack1('I<')
               symbol_name = imported_symbols[address]
               if SWIFT_PREVIEWS_MANGLED_NAMES.include?(symbol_name)
@@ -239,13 +240,12 @@ module EmergeCLI
         end
 
         def read_next_symbol(binary_data, current_address, end_address, current_symbol)
-  
           while current_address < end_address
             first_byte = read_byte(binary_data, current_address)
             current_address += 1
             immediate = first_byte & BIND_IMMEDIATE_MASK
             opcode = first_byte & BIND_OPCODE_MASK
-        
+
             case opcode
             when BIND_OPCODE_DONE
               result = current_symbol.dup
@@ -277,18 +277,20 @@ module EmergeCLI
               _, current_address = read_uleb(@binary_data, current_address)
             when BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED
               result = current_symbol.dup
-              current_symbol.offset = (current_symbol.offset + (((immediate * UINT64_SIZE) & UINT64_MAX_VALUE ) + UINT64_SIZE) & UINT64_MAX_VALUE) & UINT64_MAX_VALUE
+              current_symbol.offset = (
+                current_symbol.offset + (immediate * UINT64_SIZE) + UINT64_SIZE
+              ) & UINT64_MAX_VALUE
               return [result], current_address, current_symbol
             when BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB
               count, current_address = read_uleb(@binary_data, current_address)
               skipping, current_address = read_uleb(@binary_data, current_address)
-        
+
               results = []
               count.times do
                 results << current_symbol.dup
-                current_symbol.offset = (current_symbol.offset + (skipping + UINT64_SIZE) & UINT64_MAX_VALUE ) & UINT64_MAX_VALUE
+                current_symbol.offset = (current_symbol.offset + skipping + UINT64_SIZE) & UINT64_MAX_VALUE
               end
-        
+
               return results, current_address, current_symbol
             when BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB
               count, current_address = read_uleb(@binary_data, current_address)
@@ -315,25 +317,25 @@ module EmergeCLI
           next_byte = 0
           size = 0
           result = 0
-        
+
           loop do
             next_byte = read_byte(binary_data, address)
             address += 1
             bytes = next_byte & 0x7F
             shifted = bytes << (size * 7)
-        
+
             size += 1
             result |= shifted
             break if (next_byte & 0x80).zero?
           end
-        
+
           [result, address]
         end
 
         def read_null_terminated_string(data)
           data.unpack1("Z*")
         end
-        
+
         def vm_address(file_offset, macho)
           load_commands = macho.load_commands.select { |lc| lc.type == :LC_SEGMENT_64 || lc.type == :LC_SEGMENT }
           load_commands.each do |lc|
@@ -342,7 +344,7 @@ module EmergeCLI
                 Logger.error "Load command does not support sections function"
                 next
               end
-        
+
               lc.sections.each do |section|
                 if file_offset >= section.offset && file_offset < (section.offset) + section.size
                   return section.addr + (file_offset - section.offset)
@@ -388,7 +390,7 @@ module EmergeCLI
 
       class BoundSymbol
         attr_accessor :segment_offset, :library, :offset, :symbol, :address
-      
+
         def initialize(segment_offset:, library:, offset:, symbol:)
           @segment_offset = segment_offset
           @library = library
