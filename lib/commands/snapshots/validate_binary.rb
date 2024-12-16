@@ -16,9 +16,9 @@ module EmergeCLI
 
         # Mangled names are deterministic, no need to demangle them
         SWIFT_PREVIEWS_MANGLED_NAMES = [
-          "_$s21DeveloperToolsSupport15PreviewRegistryMp",
-          "_$s7SwiftUI15PreviewProviderMp"
-        ]
+          '_$s21DeveloperToolsSupport15PreviewRegistryMp',
+          '_$s7SwiftUI15PreviewProviderMp'
+        ].freeze
         TYPE_METADATA_KIND_MASK = 0x7 << 3
         TYPE_METADATA_KIND_SHIFT = 3
 
@@ -59,9 +59,9 @@ module EmergeCLI
             found = find_providers_in_swift_proto(use_chained_fixups, imported_symbols, bound_symbols)
 
             if found
-              Logger.info "✅ Found SwiftUI previews"
+              Logger.info '✅ Found SwiftUI previews'
             else
-              Logger.error "❌ No SwiftUI previews found"
+              Logger.error '❌ No SwiftUI previews found'
             end
           end
         end
@@ -69,17 +69,14 @@ module EmergeCLI
         private
 
         def get_binary_path
-          if @options[:path].end_with?('.xcarchive')
-            app_path = Dir.glob("#{@options[:path]}/Products/Applications/*.app").first
-            info_path = File.join(app_path, 'Info.plist')
-            plist_data = File.read(info_path)
-            plist = CFPropertyList::List.new(data: plist_data)
-            parsed_data = CFPropertyList.native_types(plist.value)
+          return @options[:path] unless @options[:path].end_with?('.xcarchive')
+          app_path = Dir.glob("#{@options[:path]}/Products/Applications/*.app").first
+          info_path = File.join(app_path, 'Info.plist')
+          plist_data = File.read(info_path)
+          plist = CFPropertyList::List.new(data: plist_data)
+          parsed_data = CFPropertyList.native_types(plist.value)
 
-            return File.join(app_path, parsed_data['CFBundleExecutable'])
-          else
-            return @options[:path]
-          end
+          File.join(app_path, parsed_data['CFBundleExecutable'])
         end
 
         def load_binary(binary_path)
@@ -90,9 +87,7 @@ module EmergeCLI
         def read_linkedit_data_command
           chained_fixups_command = nil
           @macho_file.load_commands.each do |lc|
-            if lc.type == :LC_DYLD_CHAINED_FIXUPS
-              chained_fixups_command = lc
-            end
+            chained_fixups_command = lc if lc.type == :LC_DYLD_CHAINED_FIXUPS
           end
 
           if chained_fixups_command.nil?
@@ -101,12 +96,12 @@ module EmergeCLI
           end
 
           # linkedit_data_command
-          cmd, cmd_size, dataoff, datasize = @binary_data[chained_fixups_command.offset, 16].unpack('L<L<L<L<')
+          _, _, dataoff, datasize = @binary_data[chained_fixups_command.offset, 16].unpack('L<L<L<L<')
 
-          header = @binary_data[dataoff, datasize].unpack("L<L<L<L<L<L<L<")
+          header = @binary_data[dataoff, datasize].unpack('L<L<L<L<L<L<L<')
           # dyld_chained_fixups_header
-          fixups_version, starts_offset, imports_offset, symbols_offset, imports_count, \
-            imports_format, symbols_format = header
+          _, _, imports_offset, symbols_offset, imports_count,
+            imports_format, = header
 
           imports_start = dataoff + imports_offset
           symbols_start = dataoff + symbols_offset
@@ -115,34 +110,30 @@ module EmergeCLI
 
           import_size, name_offset_proc =
             case imports_format
-            when 1 # DYLD_CHAINED_IMPORT
+            when 1, nil # DYLD_CHAINED_IMPORT
               [4, ->(ptr) { ptr.unpack1('L<') >> 9 }]
             when 2 # DYLD_CHAINED_IMPORT_ADDEND
               [8, ->(ptr) { ptr.unpack1('L<') >> 9 }]
             when 3 # DYLD_CHAINED_IMPORT_ADDEND64
               [16, ->(ptr) { ptr.unpack1('Q<') >> 32 }]
-            else
-              [4, ->(ptr) { ptr.unpack1('L<') >> 9 }]
             end
 
           # Extract imported symbol names
           imports_count.times do |i|
-            import_offset = imports_start + i * import_size
+            import_offset = imports_start + (i * import_size)
             name_offset = name_offset_proc.call(@binary_data[import_offset, import_size])
             name_start = symbols_start + name_offset
             name = read_null_terminated_string(@binary_data[name_start..])
             imported_symbols << name
           end
 
-          return true, imported_symbols
+          [true, imported_symbols]
         end
 
         def read_dyld_info_only_command
           dyld_info_only_command = nil
           @macho_file.load_commands.each do |lc|
-            if lc.type == :LC_DYLD_INFO_ONLY
-              dyld_info_only_command = lc
-            end
+            dyld_info_only_command = lc if lc.type == :LC_DYLD_INFO_ONLY
           end
 
           if dyld_info_only_command.nil?
@@ -155,9 +146,7 @@ module EmergeCLI
           end_address = dyld_info_only_command.bind_off + dyld_info_only_command.bind_size
           current_address = start_address
 
-          current_symbol = BoundSymbol.new(segment_offset: 0, library: nil, offset: 0, symbol: "")
-
-          count1 = 0
+          current_symbol = BoundSymbol.new(segment_offset: 0, library: nil, offset: 0, symbol: '')
           while current_address < end_address
             results, current_address, current_symbol = read_next_symbol(@binary_data, current_address, end_address,
                                                                         current_symbol)
@@ -169,9 +158,9 @@ module EmergeCLI
           end
 
           # Filter only swift symbols starting with _$s
-          swift_symbols = bound_symbols.select { |bound_symbol| bound_symbol.symbol.start_with?("_$s") }
+          swift_symbols = bound_symbols.select { |bound_symbol| bound_symbol.symbol.start_with?('_$s') }
 
-          load_commands = @macho_file.load_commands.select { |lc| lc.type == :LC_SEGMENT_64 || lc.type == :LC_SEGMENT }
+          load_commands = @macho_file.load_commands.select { |lc| lc.type == :LC_SEGMENT_64 || lc.type == :LC_SEGMENT } # rubocop:disable Naming/VariableNumber
 
           swift_symbols.each do |swift_symbol|
             swift_symbol.address = load_commands[swift_symbol.segment_offset].vmaddr + swift_symbol.offset
@@ -184,7 +173,7 @@ module EmergeCLI
           found_section = nil
           @macho_file.segments.each do |segment|
             segment.sections.each do |section|
-              if section.segname.strip == "__TEXT" && section.sectname.strip == "__swift5_proto"
+              if section.segname.strip == '__TEXT' && section.sectname.strip == '__swift5_proto'
                 found_section = section
                 break
               end
@@ -192,7 +181,7 @@ module EmergeCLI
           end
 
           unless found_section
-            Logger.error "The __swift5_proto section was not found."
+            Logger.error 'The __swift5_proto section was not found.'
             return false
           end
 
@@ -203,7 +192,7 @@ module EmergeCLI
           offsets_list.each do |relative_offset, offset_start|
             type_file_address = offset_start + relative_offset
             if type_file_address <= 0 || type_file_address >= @binary_data.size
-              Logger.error "Invalid protocol conformance offset"
+              Logger.error 'Invalid protocol conformance offset'
               next
             end
 
@@ -214,29 +203,23 @@ module EmergeCLI
             conformance_flags = read_little_endian_signed_integer(@binary_data, type_file_address + 12)
             kind = (conformance_flags & TYPE_METADATA_KIND_MASK) >> TYPE_METADATA_KIND_SHIFT
 
-            unless kind == 0
-              next
-            end
+            next unless kind == 0
 
             indirect_relative_offset = get_indirect_relative_offset(type_file_address, protocol_descriptor)
 
-            bound_symbol = bound_symbols.find { |bound_symbol| bound_symbol.address == indirect_relative_offset }
+            bound_symbol = bound_symbols.find { |symbol| symbol.address == indirect_relative_offset }
             if bound_symbol
-              if SWIFT_PREVIEWS_MANGLED_NAMES.include?(bound_symbol.symbol)
-                return true
-              end
+              return true if SWIFT_PREVIEWS_MANGLED_NAMES.include?(bound_symbol.symbol)
             elsif use_chained_fixups
               descriptor_offset = protocol_descriptor & ~1
               jump_ptr = type_file_address + descriptor_offset
 
               address = @binary_data[jump_ptr, 4].unpack1('I<')
               symbol_name = imported_symbols[address]
-              if SWIFT_PREVIEWS_MANGLED_NAMES.include?(symbol_name)
-                return true
-              end
+              return true if SWIFT_PREVIEWS_MANGLED_NAMES.include?(symbol_name)
             end
           end
-          return false
+          false
         end
 
         def read_next_symbol(binary_data, current_address, end_address, current_symbol)
@@ -252,7 +235,7 @@ module EmergeCLI
               current_symbol.segment_offset = 0
               current_symbol.library = 0
               current_symbol.offset = 0
-              current_symbol.symbol = ""
+              current_symbol.symbol = ''
               return [result], current_address, current_symbol
             when BIND_OPCODE_SET_DYLIB_ORDINAL_IMM
               current_symbol.library = [immediate].pack('L').unpack1('L')
@@ -299,10 +282,9 @@ module EmergeCLI
               result = current_symbol.dup
               current_symbol.offset = (current_symbol.offset + UINT64_SIZE) & UINT64_MAX_VALUE
               return [result], current_address, current_symbol
-            else
             end
           end
-          return [], current_address, current_symbol
+          [[], current_address, current_symbol]
         end
 
         def read_byte(binary_data, address)
@@ -326,33 +308,32 @@ module EmergeCLI
 
             size += 1
             result |= shifted
-            break if (next_byte & 0x80).zero?
+            break if next_byte.nobits?(0x80)
           end
 
           [result, address]
         end
 
         def read_null_terminated_string(data)
-          data.unpack1("Z*")
+          data.unpack1('Z*')
         end
 
         def vm_address(file_offset, macho)
-          load_commands = macho.load_commands.select { |lc| lc.type == :LC_SEGMENT_64 || lc.type == :LC_SEGMENT }
+          load_commands = macho.load_commands.select { |lc| lc.type == :LC_SEGMENT_64 || lc.type == :LC_SEGMENT } # rubocop:disable Naming/VariableNumber
           load_commands.each do |lc|
-            if file_offset >= lc.fileoff && file_offset < (lc.fileoff + lc.filesize)
-              unless lc.respond_to?(:sections)
-                Logger.error "Load command does not support sections function"
-                next
-              end
+            next unless file_offset >= lc.fileoff && file_offset < (lc.fileoff + lc.filesize)
+            unless lc.respond_to?(:sections)
+              Logger.error 'Load command does not support sections function'
+              next
+            end
 
-              lc.sections.each do |section|
-                if file_offset >= section.offset && file_offset < (section.offset) + section.size
-                  return section.addr + (file_offset - section.offset)
-                end
+            lc.sections.each do |section|
+              if file_offset >= section.offset && file_offset < (section.offset) + section.size
+                return section.addr + (file_offset - section.offset)
               end
             end
           end
-          return nil
+          nil
         end
 
         def parse_list(bytes, start, size)
@@ -362,7 +343,7 @@ module EmergeCLI
           class_pointers = []
 
           (size / pointer_size).to_i.times do
-            pointer = data_pointer.unpack1("l<")
+            pointer = data_pointer.unpack1('l<')
             class_pointers << [pointer, file_offset]
             data_pointer = data_pointer[pointer_size..]
             file_offset += pointer_size
@@ -373,18 +354,12 @@ module EmergeCLI
 
         def get_indirect_relative_offset(type_file_address, protocol_descriptor)
           vm_start = vm_address(type_file_address, @macho_file)
-          if vm_start.nil?
-            return nil
-          end
-          vm_destination = 0
-          if (vm_start + protocol_descriptor) % 2 == 1
-            vm_destination = (vm_start + protocol_descriptor) & ~1
+          return nil if vm_start.nil?
+          if (vm_start + protocol_descriptor).odd?
+            (vm_start + protocol_descriptor) & ~1
           elsif vm_start + protocol_descriptor > 0
-            vm_destination = vm_start + protocol_descriptor
-          else
-            vm_destination = nil
+            vm_start + protocol_descriptor
           end
-          vm_destination
         end
       end
 
