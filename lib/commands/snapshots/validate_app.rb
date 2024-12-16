@@ -8,7 +8,7 @@ require 'cfpropertylist'
 module EmergeCLI
   module Commands
     module Snapshots
-      class ValidateBinary < EmergeCLI::Commands::GlobalOptions
+      class ValidateApp < EmergeCLI::Commands::GlobalOptions
         desc 'Validate app for snapshot testing [iOS, macOS]'
 
         # Optional options

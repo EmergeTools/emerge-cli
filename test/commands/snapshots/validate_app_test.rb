@@ -3,9 +3,9 @@ require 'test_helper'
 module EmergeCLI
   module Commands
     module Snapshots
-      class ValidateBinaryTest < Minitest::Test
+      class ValidateAppTest < Minitest::Test
         def setup
-          @command = EmergeCLI::Commands::Snapshots::ValidateBinary.new
+          @command = EmergeCLI::Commands::Snapshots::ValidateApp.new
         end
 
         def test_returns_false_if_no_previews_found

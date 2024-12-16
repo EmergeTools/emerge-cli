@@ -10,7 +10,7 @@ require_relative 'commands/integrate/fastlane'
 require_relative 'commands/config/snapshots/snapshots_ios'
 require_relative 'commands/config/orderfiles/orderfiles_ios'
 require_relative 'commands/reaper/reaper'
-require_relative 'commands/snapshots/validate_binary'
+require_relative 'commands/snapshots/validate_app'
 
 require_relative 'reaper/ast_parser'
 require_relative 'reaper/code_deleter'
@@ -47,7 +47,7 @@ module EmergeCLI
   register 'reaper', Commands::Reaper
 
   register 'snapshots' do |prefix|
-    prefix.register 'validate-binary', Commands::Snapshots::ValidateBinary
+    prefix.register 'validate-app-ios', Commands::Snapshots::ValidateApp
   end
 end
 
