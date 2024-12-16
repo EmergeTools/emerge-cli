@@ -59,6 +59,15 @@ module EmergeCLI
     end
 
     def self.previous_sha
+      command = 'git rev-list --count HEAD'
+      Logger.debug command
+      count_stdout, _, count_status = Open3.capture3(command)
+
+      if !count_status.success? || count_stdout.strip.to_i <= 1
+        Logger.error 'Detected shallow clone. Please clone with full history using: git clone --no-single-branch or configure CI with fetch-depth: 0'
+        return nil
+      end
+
       command = 'git rev-parse HEAD^'
       Logger.debug command
       stdout, stderr, status = Open3.capture3(command)
