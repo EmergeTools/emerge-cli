@@ -63,6 +63,7 @@ module EmergeCLI
             else
               Logger.error '❌ No SwiftUI previews found'
             end
+            found
           end
         end
 
