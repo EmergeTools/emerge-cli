@@ -59,9 +59,11 @@ module EmergeCLI
     end
 
     def self.previous_sha
+      Logger.debug 'Fetching previous SHA'
       command = 'git rev-parse HEAD^'
       Logger.debug command
       stdout, _, status = Open3.capture3(command)
+      Logger.debug "Previous SHA: #{stdout.strip}"
       stdout.strip if status.success?
     end
 
