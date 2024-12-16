@@ -5,7 +5,7 @@ module EmergeCLI
     module Snapshots
       class ValidateBinaryTest < Minitest::Test
         def setup
-          @command = EmergeCLI::Commands::Snapshots::ValidateBinary.new()
+          @command = EmergeCLI::Commands::Snapshots::ValidateBinary.new
         end
 
         def test_returns_false_if_no_previews_found
