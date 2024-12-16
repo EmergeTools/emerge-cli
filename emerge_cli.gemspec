@@ -29,9 +29,11 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'async-http', '~> 0.86.0'
+  spec.add_dependency 'CFPropertyList', '~> 2.3', '>= 2.3.2'
   spec.add_dependency 'chunky_png', '~> 1.4.0'
   spec.add_dependency 'dry-cli', '~> 1.2.0'
   spec.add_dependency 'open3', '~> 0.2.1'
+  spec.add_dependency 'ruby-macho', '~> 4.1.0'
   spec.add_dependency 'ruby_tree_sitter', '~> 1.9'
   spec.add_dependency 'tty-prompt', '~> 0.23.1'
   spec.add_dependency 'tty-table', '~> 0.12.0'
