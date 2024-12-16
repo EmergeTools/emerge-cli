@@ -24,7 +24,7 @@ module EmergeCLI
         @download_order_files.call(**options)
 
         assert_equal 1, Dir.glob('com.emerge.hn.Hacker-News-3.4.0').length
-        
+
         content = File.read('com.emerge.hn.Hacker-News-3.4.0')
         expected = "+[SentryAppStartTracker load]\n"
         assert_equal expected, content.lines.first

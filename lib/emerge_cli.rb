@@ -50,7 +50,7 @@ module EmergeCLI
   register 'snapshots' do |prefix|
     prefix.register 'validate-app-ios', Commands::Snapshots::ValidateApp
   end
-  
+
   register 'order-files' do |prefix|
     prefix.register 'download', Commands::DownloadOrderFiles
   end

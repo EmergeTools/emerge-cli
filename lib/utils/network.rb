@@ -18,7 +18,7 @@ module EmergeCLI
     end
 
     def get(path:, headers: {}, max_retries: MAX_RETRIES)
-      request(:get, path, nil, headers, max_retries)
+      request(:get, path, nil, headers, nil, max_retries)
     end
 
     def post(path:, body:, headers: {}, query: nil, max_retries: MAX_RETRIES)
@@ -26,7 +26,7 @@ module EmergeCLI
     end
 
     def put(path:, body:, headers: {}, max_retries: MAX_RETRIES)
-      request(:put, path, body, headers, max_retries)
+      request(:put, path, body, headers, nil, max_retries)
     end
 
     def close
@@ -35,7 +35,7 @@ module EmergeCLI
 
     private
 
-    def request(method, path, body, custom_headers, query = nil, max_retries)
+    def request(method, path, body, custom_headers, query = nil, max_retries = MAX_RETRIES)
       uri = if path.start_with?('http')
               URI.parse(path)
             else
@@ -87,7 +87,9 @@ module EmergeCLI
           sleep delay
           retry
         else
-          Logger.error "Request failed after #{max_retries} attempts: #{absolute_uri} #{e.message}" unless max_retries == 0
+          unless max_retries == 0
+            Logger.error "Request failed after #{max_retries} attempts: #{absolute_uri} #{e.message}"
+          end
           raise e
         end
       end

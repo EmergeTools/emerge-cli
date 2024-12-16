@@ -54,7 +54,7 @@ module EmergeCLI
           end
         rescue StandardError => e
           Logger.error "Failed to download order file: #{e.message}"
-          Logger.error "Check your parameters and try again"
+          Logger.error 'Check your parameters and try again'
           raise e
         ensure
           @network&.close
