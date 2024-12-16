@@ -10,7 +10,7 @@ require_relative 'commands/integrate/fastlane'
 require_relative 'commands/config/snapshots/snapshots_ios'
 require_relative 'commands/config/orderfiles/orderfiles_ios'
 require_relative 'commands/reaper/reaper'
-require_relative 'commands/order_file/order_file'
+require_relative 'commands/order_files/download_order_files'
 
 require_relative 'reaper/ast_parser'
 require_relative 'reaper/code_deleter'
@@ -45,7 +45,10 @@ module EmergeCLI
 
   register 'reaper', Commands::Reaper
 
-  register 'order-file', Commands::OrderFile
+  register 'order-files' do |prefix|
+    prefix.register 'download', Commands::DownloadOrderFiles
+  end
+
 end
 
 # By default the log level is INFO, but can be overridden by the --debug flag

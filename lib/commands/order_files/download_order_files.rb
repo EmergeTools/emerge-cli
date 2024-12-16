@@ -2,8 +2,8 @@ require 'dry/cli'
 
 module EmergeCLI
   module Commands
-    class OrderFile < EmergeCLI::Commands::GlobalOptions
-      desc 'Download order file from Emerge'
+    class DownloadOrderFiles < EmergeCLI::Commands::GlobalOptions
+      desc 'Download order files from Emerge'
 
       option :bundle_id, type: :string, required: true, desc: 'Bundle identifier to download order files for'
 
