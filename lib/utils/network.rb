@@ -11,7 +11,7 @@ module EmergeCLI
     RETRY_DELAY = 5
     MAX_RETRIES = 3
 
-    def initialize(api_token:, base_url: EMERGE_API_PROD_URL)
+    def initialize(api_token: nil, base_url: EMERGE_API_PROD_URL)
       @base_url = base_url
       @api_token = api_token
       @internet = Async::HTTP::Internet.new
@@ -49,9 +49,9 @@ module EmergeCLI
       absolute_uri = uri.to_s
 
       headers = {
-        'X-API-Token' => @api_token,
         'User-Agent' => "emerge-cli/#{EmergeCLI::VERSION}"
       }
+      headers['X-API-Token'] = @api_token if @api_token
       headers['Content-Type'] = 'application/json' if method == :post && body.is_a?(Hash)
       headers.merge!(custom_headers)
 

@@ -9,6 +9,8 @@ module EmergeCLI
       def before(args)
         log_level = args[:debug] ? ::Logger::DEBUG : ::Logger::INFO
         EmergeCLI::Logger.configure(log_level)
+
+        EmergeCLI::Utils::VersionCheck.new.check_version
       end
     end
   end

@@ -108,8 +108,33 @@ emerge upload snapshots \
   --project-root /my/awesomeapp/android/repo
 ```
 
-## Building
+## Reaper
 
-This depends on [Tree Sitter](https://tree-sitter.github.io/tree-sitter/) for part of its functionality.
+Experimental support has been added to interactively examine [Reaper](https://docs.emergetools.com/docs/reaper) results and also **delete them from your codebase**.
 
-In order to parse language grammars for Swift and Kotlin, both of which are third-party language grammars, we also depend on [tsdl](https://github.com/stackmystack/tsdl). This downloads and compiles the language grammars into dylibs for us to use.
+Use the `reaper` subcommand to get started, e.g.:
+
+```shell
+emerge reaper --upload-id 40f1dfe7-6c57-47c3-bc52-b621aec0ba8d \
+  --project-root /path/to/your/repo
+```
+
+After which it will prompt you to select classes to delete.
+
+### How it works
+
+Under the hood we are using [Tree Sitter](https://tree-sitter.github.io/tree-sitter/) to parse your source files into an AST which is then used for deletions. There are some obvious limitations to this approach, namely that Tree Sitter is designed for source code editors and only looks at a single file at a time. We are exploring some better long-term approaches but this works well enough for now!
+
+### Supported languages
+
+We currently support the following languages:
+
+- Swift
+- Kotlin
+- Java
+
+Please open an issue if you need an additional language grammar.
+
+### Building
+
+Because many of the language grammars we use are third-party, we have to package them with our CLI tool as shared libraries for distribution. We depend on [tsdl](https://github.com/stackmystack/tsdl) to build the grammars from our `parsers.toml` file.

@@ -24,10 +24,9 @@ require_relative 'utils/network'
 require_relative 'utils/profiler'
 require_relative 'utils/project_detector'
 require_relative 'utils/macho_parser'
+require_relative 'utils/version_check'
 
 require 'dry/cli'
-require 'pry'
-require 'pry-byebug'
 
 module EmergeCLI
   extend Dry::CLI::Registry
