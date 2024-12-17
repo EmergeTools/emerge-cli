@@ -54,7 +54,8 @@ module EmergeCLI
         end
         if config.build_settings[LINK_MAPS_PATH] != ''
           has_error = true
-          Logger.error "❌ Path to Link Map File (#{LINK_MAPS_PATH}) is not set, we recommend setting it to '#{PATH_TO_LINKMAP}'"
+          Logger.error "❌ Path to Link Map File (#{LINK_MAPS_PATH}) is not set, we recommend \
+setting it to '#{PATH_TO_LINKMAP}'"
         end
 
         if has_error
