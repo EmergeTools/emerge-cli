@@ -38,6 +38,7 @@ module EmergeCLI
 
           @network ||= EmergeCLI::Network.new(api_token:, base_url: EMERGE_ORDER_FILE_URL)
           output_name = @options[:output] || "#{@options[:bundle_id]}-#{@options[:app_version]}.gz"
+          output_name = "#{output_name}.gz" unless output_name.end_with?('.gz')
 
           Sync do
             request = get_order_file(options[:bundle_id], options[:app_version])
@@ -47,7 +48,9 @@ module EmergeCLI
 
             if @options[:unzip]
               Logger.info 'Unzipping order file...'
-              `gunzip -c #{output_name} > #{output_name.gsub('.gz', '')}`
+              Zlib::GzipReader.open(output_name) do |gz|
+                File.write(output_name.gsub('.gz', ''), gz.read)
+              end
             end
 
             Logger.info 'Order file downloaded successfully'
