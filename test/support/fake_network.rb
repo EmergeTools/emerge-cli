@@ -14,18 +14,18 @@ module EmergeCLI
 
     attr_reader :requests
 
-    def get(path:, headers: nil)
-      @requests << { method: :get, path:, headers: }
+    def get(path:, headers: nil, max_retries: 0)
+      @requests << { method: :get, path:, headers:, max_retries: }
       response_for(path)
     end
 
-    def post(path:, body: nil, headers: nil)
-      @requests << { method: :post, path:, body:, headers: }
+    def post(path:, body: nil, headers: nil, max_retries: 0)
+      @requests << { method: :post, path:, body:, headers:, max_retries: }
       response_for(path)
     end
 
-    def put(path:, body: nil, headers: nil)
-      @requests << { method: :put, path:, body:, headers: }
+    def put(path:, body: nil, headers: nil, max_retries: 0)
+      @requests << { method: :put, path:, body:, headers:, max_retries: }
       response_for(path)
     end
 

@@ -11,6 +11,7 @@ require_relative 'commands/config/snapshots/snapshots_ios'
 require_relative 'commands/config/orderfiles/orderfiles_ios'
 require_relative 'commands/reaper/reaper'
 require_relative 'commands/snapshots/validate_app'
+require_relative 'commands/order_files/download_order_files'
 
 require_relative 'reaper/ast_parser'
 require_relative 'reaper/code_deleter'
@@ -48,6 +49,10 @@ module EmergeCLI
 
   register 'snapshots' do |prefix|
     prefix.register 'validate-app-ios', Commands::Snapshots::ValidateApp
+  end
+
+  register 'order-files' do |prefix|
+    prefix.register 'download', Commands::DownloadOrderFiles
   end
 end
 

@@ -17,16 +17,16 @@ module EmergeCLI
       @internet = Async::HTTP::Internet.new
     end
 
-    def get(path:, headers: {})
-      request(:get, path, nil, headers)
+    def get(path:, headers: {}, max_retries: MAX_RETRIES)
+      request(:get, path, nil, headers, nil, max_retries)
     end
 
-    def post(path:, body:, headers: {}, query: nil)
-      request(:post, path, body, headers, query)
+    def post(path:, body:, headers: {}, query: nil, max_retries: MAX_RETRIES)
+      request(:post, path, body, headers, query, max_retries)
     end
 
-    def put(path:, body:, headers: {})
-      request(:put, path, body, headers)
+    def put(path:, body:, headers: {}, max_retries: MAX_RETRIES)
+      request(:put, path, body, headers, nil, max_retries)
     end
 
     def close
@@ -35,7 +35,7 @@ module EmergeCLI
 
     private
 
-    def request(method, path, body, custom_headers, query = nil)
+    def request(method, path, body, custom_headers, query = nil, max_retries = MAX_RETRIES)
       uri = if path.start_with?('http')
               URI.parse(path)
             else
@@ -71,10 +71,10 @@ module EmergeCLI
         response
       rescue StandardError => e
         retries += 1
-        if retries <= MAX_RETRIES
+        if retries <= max_retries
           delay = RETRY_DELAY * retries
           error_message = e.message
-          Logger.warn "Request failed (attempt #{retries}/#{MAX_RETRIES}): #{error_message}"
+          Logger.warn "Request failed (attempt #{retries}/#{max_retries}): #{error_message}"
           Logger.warn "Retrying in #{delay} seconds..."
 
           begin
@@ -87,7 +87,9 @@ module EmergeCLI
           sleep delay
           retry
         else
-          Logger.error "Request failed after #{MAX_RETRIES} attempts: #{absolute_uri} #{e.message}"
+          unless max_retries == 0
+            Logger.error "Request failed after #{max_retries} attempts: #{absolute_uri} #{e.message}"
+          end
           raise e
         end
       end
