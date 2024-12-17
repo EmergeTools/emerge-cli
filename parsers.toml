@@ -4,4 +4,4 @@ tree-sitter-version = "0.24.4"
 java = "0.23.2"
 kotlin = { ref = "76f53c48d29e8588934fb55b0240d7bdfe00bfe5", from = "https://github.com/fwcd/tree-sitter-kotlin" }
 swift = { ref = "6accc2f720c7ff8573f6956a34ea22f50c44d839", from = "https://github.com/alex-pinkus/tree-sitter-swift" }
-objc = { ref = "18802acf31d0b5c1c1d50bdbc9eb0e1636cab9ed", from = "https://github.com/tree-sitter-grammars/tree-sitter-objc" }
+objc = { ref = "18802acf31d0b5c1c1d50bdbc9eb0e1636cab9ed", from = "https://github.com/tree-sitter-grammars/tree-sitter-objc", cmd = "npm install && npx tree-sitter build" }
