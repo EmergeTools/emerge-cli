@@ -38,8 +38,8 @@ module EmergeCLI
           project_root = @options[:project_root] || Dir.pwd
 
           Sync do
-            response = @profiler.measure('fetch_dead_code') { fetch_dead_code(@options[:upload_id]) }
-            result = @profiler.measure('parse_dead_code') { DeadCodeResult.new(JSON.parse(response.read)) }
+            all_data = @profiler.measure('fetch_dead_code') { fetch_all_dead_code(@options[:upload_id]) }
+            result = @profiler.measure('parse_dead_code') { DeadCodeResult.new(all_data) }
 
             Logger.info result.to_s
 
@@ -80,11 +80,41 @@ module EmergeCLI
 
       private
 
-      def fetch_dead_code(upload_id)
-        Logger.info 'Fetching dead code analysis...'
+      def fetch_all_dead_code(upload_id)
+        Logger.info 'Fetching dead code analysis (this may take a while for large codebases)...'
+
+        page = 1
+        combined_data = nil
+
+        loop do
+          response = fetch_dead_code_page(upload_id, page)
+          data = JSON.parse(response.read)
+
+          if combined_data.nil?
+            combined_data = data
+          else
+            combined_data['dead_code'].concat(data.fetch('dead_code', []))
+          end
+
+          current_page = data.dig('pagination', 'current_page')
+          total_pages = data.dig('pagination', 'total_pages')
+
+          break unless current_page && total_pages && current_page < total_pages
+
+          page += 1
+          Logger.info "Fetching page #{page} of #{total_pages}..."
+        end
+
+        combined_data
+      end
+
+      def fetch_dead_code_page(upload_id, page)
         @network.post(
           path: '/deadCode/export',
-          query: { uploadId: upload_id },
+          query: {
+            uploadId: upload_id,
+            page: page
+          },
           headers: { 'Accept' => 'application/json' },
           body: nil
         )

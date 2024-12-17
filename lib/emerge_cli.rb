@@ -10,6 +10,9 @@ require_relative 'commands/integrate/fastlane'
 require_relative 'commands/config/snapshots/snapshots_ios'
 require_relative 'commands/config/orderfiles/orderfiles_ios'
 require_relative 'commands/reaper/reaper'
+require_relative 'commands/snapshots/validate_app'
+require_relative 'commands/order_files/download_order_files'
+require_relative 'commands/order_files/validate_linkmaps'
 
 require_relative 'reaper/ast_parser'
 require_relative 'reaper/code_deleter'
@@ -22,10 +25,10 @@ require_relative 'utils/logger'
 require_relative 'utils/network'
 require_relative 'utils/profiler'
 require_relative 'utils/project_detector'
+require_relative 'utils/macho_parser'
+require_relative 'utils/version_check'
 
 require 'dry/cli'
-require 'pry'
-require 'pry-byebug'
 
 module EmergeCLI
   extend Dry::CLI::Registry
@@ -44,6 +47,15 @@ module EmergeCLI
   end
 
   register 'reaper', Commands::Reaper
+
+  register 'snapshots' do |prefix|
+    prefix.register 'validate-app-ios', Commands::Snapshots::ValidateApp
+  end
+
+  register 'order-files' do |prefix|
+    prefix.register 'download', Commands::DownloadOrderFiles
+    prefix.register 'validate-linkmaps', Commands::ValidateLinkmaps
+  end
 end
 
 # By default the log level is INFO, but can be overridden by the --debug flag

@@ -1,3 +1,3 @@
 module EmergeCLI
-  VERSION = '0.2.2'.freeze
+  VERSION = '0.4.0'.freeze
 end
