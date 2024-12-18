@@ -9,19 +9,22 @@ module EmergeCLI
       DECLARATION_NODE_TYPES = {
         'swift' => %i[class_declaration protocol_declaration],
         'kotlin' => %i[class_declaration protocol_declaration interface_declaration object_declaration],
-        'java' => %i[class_declaration protocol_declaration interface_declaration]
+        'java' => %i[class_declaration protocol_declaration interface_declaration],
+        'objc' => %i[class_declaration protocol_declaration]
       }.freeze
 
       IDENTIFIER_NODE_TYPES = {
         'swift' => %i[simple_identifier qualified_name identifier type_identifier],
         'kotlin' => %i[simple_identifier qualified_name identifier type_identifier],
-        'java' => %i[simple_identifier qualified_name identifier type_identifier]
+        'java' => %i[simple_identifier qualified_name identifier type_identifier],
+        'objc' => %i[simple_identifier qualified_name identifier type_identifier]
       }.freeze
 
       COMMENT_AND_IMPORT_NODE_TYPES = {
         'swift' => %i[comment import_declaration],
         'kotlin' => %i[comment import_header],
-        'java' => %i[comment import_declaration]
+        'java' => %i[comment import_declaration],
+        'objc' => %i[comment import_declaration]
       }.freeze
 
       attr_reader :parser, :language
@@ -52,17 +55,9 @@ module EmergeCLI
         extension = platform == 'darwin' ? 'dylib' : 'so'
         parser_file = "libtree-sitter-#{language}-#{platform}-#{arch}.#{extension}"
         parser_path = File.join('parsers', parser_file)
+        raise "No language grammar found for #{language}" unless File.exist?(parser_path)
 
-        case language
-        when 'swift'
-          @parser.language = TreeSitter::Language.load('swift', parser_path)
-        when 'kotlin'
-          @parser.language = TreeSitter::Language.load('kotlin', parser_path)
-        when 'java'
-          @parser.language = TreeSitter::Language.load('java', parser_path)
-        else
-          raise "Unsupported language: #{language}"
-        end
+        @parser.language = TreeSitter::Language.load(language, parser_path)
       end
 
       # Deletes a type from the given file contents.
@@ -116,6 +111,12 @@ module EmergeCLI
         had_final_newline ? "#{modified_source}\n" : modified_source
       end
 
+      # string_content EMGTuple.h
+      # method_type (EMGTuple *)
+      # type_name EMGTuple *
+      # class_implementation @implementation EMGTuple
+      # preproc_include #import "EMGTuple.h"
+
       # Finds all usages of a given type in a file.
       # TODO(telkins): Look into the tree-sitter query API to see if it simplifies this.
       def find_usages(file_contents:, type_name:)
@@ -127,6 +128,7 @@ module EmergeCLI
 
         while (node = nodes_to_process.shift)
           identifier_type = identifier_node_types.include?(node.type)
+          Logger.debug "Processing node: #{node.type} #{node_text(node)}"
           declaration_type = if node == tree.root_node
                                false
                              else
@@ -136,6 +138,11 @@ module EmergeCLI
             usages << { line: node.start_point.row, usage_type: 'declaration' }
           elsif identifier_type && node_text(node) == type_name
             usages << { line: node.start_point.row, usage_type: 'identifier' }
+          elsif node.type == :@implementation
+            next_sibling = node.next_named_sibling
+            if next_sibling.type == :identifier && node_text(next_sibling) == type_name
+              usages << { line: node.start_point.row, usage_type: 'declaration' }
+            end
           end
 
           node.each { |child| nodes_to_process.push(child) }
