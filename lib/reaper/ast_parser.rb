@@ -111,12 +111,6 @@ module EmergeCLI
         had_final_newline ? "#{modified_source}\n" : modified_source
       end
 
-      # string_content EMGTuple.h
-      # method_type (EMGTuple *)
-      # type_name EMGTuple *
-      # class_implementation @implementation EMGTuple
-      # preproc_include #import "EMGTuple.h"
-
       # Finds all usages of a given type in a file.
       # TODO(telkins): Look into the tree-sitter query API to see if it simplifies this.
       def find_usages(file_contents:, type_name:)
