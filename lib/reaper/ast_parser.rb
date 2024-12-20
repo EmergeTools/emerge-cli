@@ -179,14 +179,14 @@ module EmergeCLI
 
         return file_contents if nodes_to_remove.empty?
 
-        Logger.debug "Found #{nodes_to_remove.length} nodes to remove"
+        Logger.debug "✅ Found #{nodes_to_remove.length} nodes to remove"
         remove_nodes_from_content(file_contents, nodes_to_remove)
       end
 
       private
 
       def remove_node(node, lines_to_remove)
-        Logger.debug "Removing node: #{node.type}"
+        Logger.debug "✅ Removing node: #{node.type}"
         start_position = node.start_point.row
         end_position = node.end_point.row
         lines_to_remove << { start: start_position, end: end_position }

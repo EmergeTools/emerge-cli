@@ -164,8 +164,7 @@ module EmergeCLI
         source_patterns = case @platform&.downcase
                           when 'ios'
                             { 'swift' => '**/*.swift',
-                              'objc' => '**/*.{m,h}'
-                            }
+                              'objc' => '**/*.{m,h}' }
                           when 'android'
                             {
                               'kotlin' => '**/*.kt',

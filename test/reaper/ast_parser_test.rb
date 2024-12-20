@@ -3,7 +3,6 @@ require 'test_helper'
 module EmergeCLI
   module Reaper
     class AstParserTest < Minitest::Test
-
       FIXTURES_PATH = File.join(__dir__, '../fixtures/reaper')
 
       def self.load_fixture(path)
@@ -1697,8 +1696,35 @@ module EmergeCLI
             assert_nil updated_contents
           end
 
+          # def test_removes_entire_objective_c_header_file
+          #   Logger.configure(::Logger::DEBUG)
+          #   language = 'objc'
+          #   parser = AstParser.new(language)
+          #   file_contents = <<~OBJC.strip
+          #     #import <Foundation/Foundation.h>
+
+          #     NS_ASSUME_NONNULL_BEGIN
+
+          #     @interface EMGTuple : NSObject
+
+          #     @property (strong, nonatomic, readonly) FirstType first;
+          #     @property (strong, nonatomic, readonly) SecondType second;
+
+          #     + (EMGTuple *)tupleWith:(FirstType)first and:(SecondType)second;
+
+          #     @end
+
+          #     NS_ASSUME_NONNULL_END
+          #   OBJC
+          #   updated_contents = parser.delete_type(
+          #     file_contents: file_contents,
+          #     type_name: 'EMGTuple'
+          #   )
+          #   File.write(File.join(FIXTURES_PATH, 'objc/test_removes_entire_objective_c_header_file/actual.h'), updated_contents)
+          #   assert_nil updated_contents
+          # end
+
           def test_removes_type_from_objective_c_file
-            Logger.configure(::Logger::DEBUG)
             language = 'objc'
             parser = AstParser.new(language)
             file_contents = AstParserTest.load_fixture('objc/EMGURLProtocol.m')
