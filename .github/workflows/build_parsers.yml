@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - main
-      - telkins/build-dylibs
+      - telkins/objc
     paths:
-      - 'parsers.toml'
-      - '.github/workflows/build_parsers.yml'
+      - "parsers.toml"
+      - ".github/workflows/build_parsers.yml"
   workflow_dispatch:
 
 jobs:
