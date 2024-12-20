@@ -3,6 +3,7 @@ require 'open3'
 module EmergeCLI
   module Git
     def self.branch
+      Logger.debug 'Getting current branch name'
       command = 'git rev-parse --abbrev-ref HEAD'
       Logger.debug command
       stdout, _, status = Open3.capture3(command)
@@ -39,6 +40,7 @@ module EmergeCLI
     end
 
     def self.sha
+      Logger.debug 'Getting current SHA'
       command = 'git rev-parse HEAD'
       Logger.debug command
       stdout, _, status = Open3.capture3(command)
@@ -46,6 +48,7 @@ module EmergeCLI
     end
 
     def self.base_sha
+      Logger.debug 'Getting base SHA'
       current_branch = branch
       remote_head = remote_head_branch
       return nil if current_branch.nil? || remote_head.nil?
@@ -59,6 +62,7 @@ module EmergeCLI
     end
 
     def self.previous_sha
+      Logger.debug 'Getting previous SHA'
       command = 'git rev-list --count HEAD'
       Logger.debug command
       count_stdout, _, count_status = Open3.capture3(command)
@@ -78,12 +82,14 @@ module EmergeCLI
     end
 
     def self.primary_remote
+      Logger.debug 'Getting primary remote'
       remote = remote()
       return nil if remote.nil?
       remote.include?('origin') ? 'origin' : remote.first
     end
 
     def self.remote_head_branch(remote = primary_remote)
+      Logger.debug 'Getting remote head branch'
       return nil if remote.nil?
       command = "git remote show #{remote}"
       Logger.debug command
@@ -98,6 +104,7 @@ module EmergeCLI
     end
 
     def self.remote_url(remote = primary_remote)
+      Logger.debug 'Getting remote URL'
       return nil if remote.nil?
       command = "git config --get remote.#{remote}.url"
       Logger.debug command
@@ -106,6 +113,7 @@ module EmergeCLI
     end
 
     def self.remote
+      Logger.debug 'Getting remote'
       command = 'git remote'
       Logger.debug command
       stdout, _, status = Open3.capture3(command)
