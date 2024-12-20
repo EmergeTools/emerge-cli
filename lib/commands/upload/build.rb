@@ -41,7 +41,8 @@ module EmergeCLI
           raise "File not found at path: #{file_path}" unless file_exists
 
           file_extension = File.extname(file_path)
-          raise "Unsupported file type: #{file_extension}" unless ['.ipa', '.apk', '.aab', '.zip'].include?(file_extension)
+          raise "Unsupported file type: #{file_extension}" unless ['.ipa', '.apk', '.aab',
+                                                                   '.zip'].include?(file_extension)
 
           api_token = @options[:api_token] || ENV.fetch('EMERGE_API_TOKEN', nil)
           raise 'API token is required and cannot be blank' if api_token.nil? || api_token.strip.empty?
@@ -74,8 +75,9 @@ module EmergeCLI
               end
             end
 
-            Logger.info('✅ Upload complete!')
-            Logger.info("You can view the build analysis at https://emergetools.com/build/#{upload_id}")
+            Logger.info('Upload complete successfully!')
+            Logger.info "Time taken: #{(Time.now - start_time).round(2)} seconds"
+            Logger.info("✅ You can view the build analysis at https://emergetools.com/build/#{upload_id}")
           end
         end
 
@@ -104,7 +106,7 @@ module EmergeCLI
           }.compact
 
           upload_response = @network.post(
-            path: "/upload",
+            path: '/upload',
             body: payload,
             headers: { 'Content-Type' => 'application/json' }
           )
@@ -113,7 +115,7 @@ module EmergeCLI
           upload_url = upload_json.fetch('uploadURL')
           Logger.debug("Got upload ID: #{upload_id}")
 
-          warning = upload_json.dig('warning')
+          warning = upload_json['warning']
           Logger.warn(warning) if warning
 
           [upload_url, upload_id]
