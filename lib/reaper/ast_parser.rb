@@ -9,19 +9,22 @@ module EmergeCLI
       DECLARATION_NODE_TYPES = {
         'swift' => %i[class_declaration protocol_declaration],
         'kotlin' => %i[class_declaration protocol_declaration interface_declaration object_declaration],
-        'java' => %i[class_declaration protocol_declaration interface_declaration]
+        'java' => %i[class_declaration protocol_declaration interface_declaration],
+        'objc' => %i[class_declaration protocol_declaration class_implementation class_interface]
       }.freeze
 
       IDENTIFIER_NODE_TYPES = {
         'swift' => %i[simple_identifier qualified_name identifier type_identifier],
         'kotlin' => %i[simple_identifier qualified_name identifier type_identifier],
-        'java' => %i[simple_identifier qualified_name identifier type_identifier]
+        'java' => %i[simple_identifier qualified_name identifier type_identifier],
+        'objc' => %i[simple_identifier qualified_name identifier type_identifier]
       }.freeze
 
       COMMENT_AND_IMPORT_NODE_TYPES = {
         'swift' => %i[comment import_declaration],
         'kotlin' => %i[comment import_header],
-        'java' => %i[comment import_declaration]
+        'java' => %i[comment import_declaration],
+        'objc' => %i[comment import_declaration preproc_include]
       }.freeze
 
       attr_reader :parser, :language
@@ -52,17 +55,9 @@ module EmergeCLI
         extension = platform == 'darwin' ? 'dylib' : 'so'
         parser_file = "libtree-sitter-#{language}-#{platform}-#{arch}.#{extension}"
         parser_path = File.join('parsers', parser_file)
+        raise "No language grammar found for #{language}" unless File.exist?(parser_path)
 
-        case language
-        when 'swift'
-          @parser.language = TreeSitter::Language.load('swift', parser_path)
-        when 'kotlin'
-          @parser.language = TreeSitter::Language.load('kotlin', parser_path)
-        when 'java'
-          @parser.language = TreeSitter::Language.load('java', parser_path)
-        else
-          raise "Unsupported language: #{language}"
-        end
+        @parser.language = TreeSitter::Language.load(language, parser_path)
       end
 
       # Deletes a type from the given file contents.
@@ -127,6 +122,7 @@ module EmergeCLI
 
         while (node = nodes_to_process.shift)
           identifier_type = identifier_node_types.include?(node.type)
+          Logger.debug "Processing node: #{node.type} #{node_text(node)}"
           declaration_type = if node == tree.root_node
                                false
                              else
@@ -136,6 +132,11 @@ module EmergeCLI
             usages << { line: node.start_point.row, usage_type: 'declaration' }
           elsif identifier_type && node_text(node) == type_name
             usages << { line: node.start_point.row, usage_type: 'identifier' }
+          elsif node.type == :@implementation
+            next_sibling = node.next_named_sibling
+            if next_sibling.type == :identifier && node_text(next_sibling) == type_name
+              usages << { line: next_sibling.start_point.row, usage_type: 'declaration' }
+            end
           end
 
           node.each { |child| nodes_to_process.push(child) }
@@ -172,14 +173,14 @@ module EmergeCLI
 
         return file_contents if nodes_to_remove.empty?
 
-        Logger.debug "Found #{nodes_to_remove.length} nodes to remove"
+        Logger.debug "✅ Found #{nodes_to_remove.length} nodes to remove"
         remove_nodes_from_content(file_contents, nodes_to_remove)
       end
 
       private
 
       def remove_node(node, lines_to_remove)
-        Logger.debug "Removing node: #{node.type}"
+        Logger.debug "✅ Removing node: #{node.type}"
         start_position = node.start_point.row
         end_position = node.end_point.row
         lines_to_remove << { start: start_position, end: end_position }
@@ -287,7 +288,7 @@ module EmergeCLI
           when :navigation_expression # NetworkDebugger.printStats
             result = handle_navigation_expression(current)
             return result if result
-          when :class_declaration, :function_declaration, :method_declaration
+          when :class_declaration, :function_declaration, :method_declaration, :@implementation
             Logger.debug "Reached structural element, stopping at: #{current.type}"
             break
           end
