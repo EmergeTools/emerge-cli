@@ -254,8 +254,7 @@ module EmergeCLI
                    when '.swift' then 'swift'
                    when '.kt' then 'kotlin'
                    when '.java' then 'java'
-                   when '.m' then 'objc'
-                   when '.h' then 'objc'
+                   when '.m', '.h' then 'objc'
                    else
                      raise "Unsupported file type for #{file_path}"
                    end

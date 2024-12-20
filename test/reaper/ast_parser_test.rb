@@ -1720,7 +1720,6 @@ module EmergeCLI
           #     file_contents: file_contents,
           #     type_name: 'EMGTuple'
           #   )
-          #   File.write(File.join(FIXTURES_PATH, 'objc/test_removes_entire_objective_c_header_file/actual.h'), updated_contents)
           #   assert_nil updated_contents
           # end
 
@@ -1732,7 +1731,9 @@ module EmergeCLI
               file_contents: file_contents,
               type_name: 'EMGCacheEntry'
             )
-            expected_contents = AstParserTest.load_fixture('objc/test_removes_type_from_objective_c_file/EMGURLProtocol.m')
+            expected_contents = AstParserTest.load_fixture(
+              'objc/test_removes_type_from_objective_c_file/EMGURLProtocol.m'
+            )
             assert_equal expected_contents, updated_contents
           end
         end
