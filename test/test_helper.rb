@@ -29,3 +29,7 @@ SimpleCov.start do
 end
 
 require_relative '../lib/emerge_cli'
+
+# Ensure fixtures directory exists
+FIXTURES_ROOT = File.expand_path('fixtures', __dir__)
+Dir.mkdir(FIXTURES_ROOT) unless File.directory?(FIXTURES_ROOT)

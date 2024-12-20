@@ -10,7 +10,7 @@ module EmergeCLI
         'swift' => %i[class_declaration protocol_declaration],
         'kotlin' => %i[class_declaration protocol_declaration interface_declaration object_declaration],
         'java' => %i[class_declaration protocol_declaration interface_declaration],
-        'objc' => %i[class_declaration protocol_declaration]
+        'objc' => %i[class_declaration protocol_declaration class_implementation class_interface]
       }.freeze
 
       IDENTIFIER_NODE_TYPES = {
@@ -24,7 +24,7 @@ module EmergeCLI
         'swift' => %i[comment import_declaration],
         'kotlin' => %i[comment import_header],
         'java' => %i[comment import_declaration],
-        'objc' => %i[comment import_declaration]
+        'objc' => %i[comment import_declaration preproc_include]
       }.freeze
 
       attr_reader :parser, :language
@@ -141,7 +141,7 @@ module EmergeCLI
           elsif node.type == :@implementation
             next_sibling = node.next_named_sibling
             if next_sibling.type == :identifier && node_text(next_sibling) == type_name
-              usages << { line: node.start_point.row, usage_type: 'declaration' }
+              usages << { line: next_sibling.start_point.row, usage_type: 'declaration' }
             end
           end
 
@@ -294,7 +294,7 @@ module EmergeCLI
           when :navigation_expression # NetworkDebugger.printStats
             result = handle_navigation_expression(current)
             return result if result
-          when :class_declaration, :function_declaration, :method_declaration
+          when :class_declaration, :function_declaration, :method_declaration, :@implementation
             Logger.debug "Reached structural element, stopping at: #{current.type}"
             break
           end
