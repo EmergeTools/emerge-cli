@@ -14,6 +14,7 @@ require_relative 'commands/snapshots/validate_app'
 require_relative 'commands/order_files/download_order_files'
 require_relative 'commands/order_files/validate_linkmaps'
 require_relative 'commands/order_files/validate_xcode_project'
+require_relative 'commands/upload/build'
 
 require_relative 'reaper/ast_parser'
 require_relative 'reaper/code_deleter'
@@ -30,11 +31,13 @@ require_relative 'utils/macho_parser'
 require_relative 'utils/version_check'
 
 require 'dry/cli'
+require 'pry-byebug'
 
 module EmergeCLI
   extend Dry::CLI::Registry
 
   register 'upload', aliases: ['u'] do |prefix|
+    prefix.register 'build', Commands::Upload::Build
     prefix.register 'snapshots', Commands::Upload::Snapshots
   end
 
