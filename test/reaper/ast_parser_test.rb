@@ -3,6 +3,12 @@ require 'test_helper'
 module EmergeCLI
   module Reaper
     class AstParserTest < Minitest::Test
+      FIXTURES_PATH = File.join(__dir__, '../fixtures/reaper')
+
+      def self.load_fixture(path)
+        File.read(File.join(FIXTURES_PATH, path)).strip
+      end
+
       describe 'Swift' do
         describe 'delete_type' do
           def test_removes_protocol_from_swift_file
@@ -1660,6 +1666,75 @@ module EmergeCLI
               { line: 127, usage_type: 'identifier' }
             ]
             assert_equal expected_usages, found_usages
+          end
+        end
+      end
+      describe 'Objective-C' do
+        describe 'delete_type' do
+          def test_removes_entire_objective_c_file
+            language = 'objc'
+            parser = AstParser.new(language)
+            file_contents = <<~OBJC.strip
+              #import "EMGTuple.h"
+
+              @implementation EMGTuple
+
+              + (EMGTuple *)tupleWith:(id)first and:(id)second
+              {
+                  EMGTuple *tuple = [EMGTuple new];
+                  tuple->_first = first;
+                  tuple->_second = second;
+                  return tuple;
+              }
+
+              @end
+            OBJC
+            updated_contents = parser.delete_type(
+              file_contents: file_contents,
+              type_name: 'EMGTuple'
+            )
+            assert_nil updated_contents
+          end
+
+          # def test_removes_entire_objective_c_header_file
+          #   Logger.configure(::Logger::DEBUG)
+          #   language = 'objc'
+          #   parser = AstParser.new(language)
+          #   file_contents = <<~OBJC.strip
+          #     #import <Foundation/Foundation.h>
+
+          #     NS_ASSUME_NONNULL_BEGIN
+
+          #     @interface EMGTuple : NSObject
+
+          #     @property (strong, nonatomic, readonly) FirstType first;
+          #     @property (strong, nonatomic, readonly) SecondType second;
+
+          #     + (EMGTuple *)tupleWith:(FirstType)first and:(SecondType)second;
+
+          #     @end
+
+          #     NS_ASSUME_NONNULL_END
+          #   OBJC
+          #   updated_contents = parser.delete_type(
+          #     file_contents: file_contents,
+          #     type_name: 'EMGTuple'
+          #   )
+          #   assert_nil updated_contents
+          # end
+
+          def test_removes_type_from_objective_c_file
+            language = 'objc'
+            parser = AstParser.new(language)
+            file_contents = AstParserTest.load_fixture('objc/EMGURLProtocol.m')
+            updated_contents = parser.delete_type(
+              file_contents: file_contents,
+              type_name: 'EMGCacheEntry'
+            )
+            expected_contents = AstParserTest.load_fixture(
+              'objc/test_removes_type_from_objective_c_file/EMGURLProtocol.m'
+            )
+            assert_equal expected_contents, updated_contents
           end
         end
       end

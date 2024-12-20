@@ -163,7 +163,8 @@ module EmergeCLI
         found_usages = []
         source_patterns = case @platform&.downcase
                           when 'ios'
-                            { 'swift' => '**/*.swift' }
+                            { 'swift' => '**/*.swift',
+                              'objc' => '**/*.{m,h}' }
                           when 'android'
                             {
                               'kotlin' => '**/*.kt',
@@ -253,6 +254,7 @@ module EmergeCLI
                    when '.swift' then 'swift'
                    when '.kt' then 'kotlin'
                    when '.java' then 'java'
+                   when '.m', '.h' then 'objc'
                    else
                      raise "Unsupported file type for #{file_path}"
                    end
