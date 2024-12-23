@@ -15,6 +15,7 @@ require_relative 'commands/order_files/download_order_files'
 require_relative 'commands/order_files/validate_linkmaps'
 require_relative 'commands/order_files/validate_xcode_project'
 require_relative 'commands/upload/build'
+require_relative 'commands/build_distribution/validate_app'
 
 require_relative 'reaper/ast_parser'
 require_relative 'reaper/code_deleter'
@@ -60,6 +61,10 @@ module EmergeCLI
     prefix.register 'download', Commands::DownloadOrderFiles
     prefix.register 'validate-linkmaps', Commands::ValidateLinkmaps
     prefix.register 'validate-xcode-project', Commands::ValidateXcodeProject
+  end
+
+  register 'build-distribution' do |prefix|
+    prefix.register 'validate-app', Commands::ValidateApp
   end
 end
 

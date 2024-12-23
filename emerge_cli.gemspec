@@ -39,6 +39,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'tty-prompt', '~> 0.23.1'
   spec.add_dependency 'tty-table', '~> 0.12.0'
   spec.add_dependency 'xcodeproj', '~> 1.27.0'
+  spec.add_dependency 'rubyzip', '~> 2.3.0'
 
   spec.metadata['rubygems_mfa_required'] = 'true'
 end
