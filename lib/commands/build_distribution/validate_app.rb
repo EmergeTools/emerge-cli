@@ -1,6 +1,7 @@
 require 'dry/cli'
 require 'cfpropertylist'
 require 'zip'
+require 'rbconfig'
 
 module EmergeCLI
   module Commands
@@ -72,6 +73,11 @@ module EmergeCLI
       end
 
       def run_codesign_check(app_path)
+        unless RbConfig::CONFIG['host_os'] =~ /darwin/i
+          Logger.info 'Skipping codesign check on non-macOS platform'
+          return
+        end
+
         command = "codesign -dvvv '#{app_path}'"
         Logger.debug command
         stdout, _, status = Open3.capture3(command)
