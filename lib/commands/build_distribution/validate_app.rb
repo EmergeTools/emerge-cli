@@ -10,12 +10,12 @@ module EmergeCLI
       option :path, type: :string, required: true, desc: 'Path to the xcarchive or IPA to validate'
 
       # Constants
-      PLIST_START = '<plist'
-      PLIST_STOP = '</plist>'
+      PLIST_START = '<plist'.freeze
+      PLIST_STOP = '</plist>'.freeze
 
-      UTF8_ENCODING = 'UTF-8'
-      STRING_FORMAT = 'binary'
-      EMPTY_STRING = ''
+      UTF8_ENCODING = 'UTF-8'.freeze
+      STRING_FORMAT = 'binary'.freeze
+      EMPTY_STRING = ''.freeze
 
       def call(**options)
         @options = options
@@ -88,7 +88,7 @@ module EmergeCLI
         content = File.read(entitlements_path)
         lines = content.lines
 
-        buffer = String.new
+        buffer = ''
         inside_plist = false
         lines.each do |line|
           inside_plist = true if line.include? PLIST_START
@@ -117,7 +117,7 @@ module EmergeCLI
           Logger.info 'Provisioning profile supports all devices (likely an enterprise profile)'
         else
           devices = parsed_data['ProvisionedDevices']
-          Logger.info "Provisioning profile does not support all devices (likely a development profile)."
+          Logger.info 'Provisioning profile does not support all devices (likely a development profile).'
           Logger.info "Devices: #{devices.inspect}"
         end
       end
