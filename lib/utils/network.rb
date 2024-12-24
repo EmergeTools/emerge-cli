@@ -17,8 +17,8 @@ module EmergeCLI
       @internet = Async::HTTP::Internet.new
     end
 
-    def get(path:, headers: {}, max_retries: MAX_RETRIES)
-      request(:get, path, nil, headers, nil, max_retries)
+    def get(path:, headers: {}, query: nil, max_retries: MAX_RETRIES)
+      request(:get, path, nil, headers, query, max_retries)
     end
 
     def post(path:, body:, headers: {}, query: nil, max_retries: MAX_RETRIES)
