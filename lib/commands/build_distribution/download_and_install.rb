@@ -38,12 +38,12 @@ module EmergeCLI
               response = parse_response(request)
 
               platform = response['platform']
-              build_url = response['binaryUrl']
+              download_url = response['downloadUrl']
 
               extension = platform == 'ios' ? 'ipa' : 'apk'
               Logger.info 'Downloading build...'
               output_name = @options[:output] || "#{@options[:build_id]}.#{extension}"
-              `curl --progress-bar -L '#{build_url}' -o #{output_name} `
+              `curl --progress-bar -L '#{download_url}' -o #{output_name} `
               Logger.info "✅ Build downloaded to #{output_name}"
 
               if @options[:install]
@@ -64,7 +64,8 @@ module EmergeCLI
 
         def get_build_url(build_id)
           @network.get(
-            path: '/distribution/getDistributionBuild',
+            # path: 'http://localhost:4000/distribution/downloadUrl',
+            path: "http://localhost:4000/distribution/downloadUrl?buildId=#{build_id}",
             max_retries: 3,
             query: {
               buildId: build_id
