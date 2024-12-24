@@ -9,7 +9,7 @@ module EmergeCLI
       class ValidateApp < EmergeCLI::Commands::GlobalOptions
         desc 'Validate app for build distribution'
 
-        option :path, type: :string, required: true, desc: 'Path to the xcarchive or IPA to validate'
+        option :path, type: :string, required: true, desc: 'Path to the xcarchive, IPA or APK to validate'
 
         # Constants
         PLIST_START = '<plist'.freeze
@@ -18,6 +18,8 @@ module EmergeCLI
         UTF8_ENCODING = 'UTF-8'.freeze
         STRING_FORMAT = 'binary'.freeze
         EMPTY_STRING = ''.freeze
+
+        EXPECTED_ABI = 'arm64-v8a'.freeze
 
         def call(**options)
           @options = options
@@ -32,6 +34,8 @@ module EmergeCLI
               handle_ipa
             when '.app'
               handle_app
+            when '.apk'
+              handle_apk
             else
               raise "Unknown file extension: #{file_extension}"
             end
@@ -71,6 +75,13 @@ module EmergeCLI
           app_path = @options[:path]
           run_codesign_check(app_path)
           read_provisioning_profile(app_path)
+        end
+
+        def handle_apk
+          raise 'Path must be an APK' unless @options[:path].end_with?('.apk')
+
+          apk_path = @options[:path]
+          check_supported_abis(apk_path)
         end
 
         def run_codesign_check(app_path)
@@ -127,6 +138,25 @@ module EmergeCLI
             Logger.info 'Provisioning profile does not support all devices (likely a development profile).'
             Logger.info "Devices: #{devices.inspect}"
           end
+        end
+
+        def check_supported_abis(apk_path)
+          abis = []
+
+          Zip::File.open(apk_path) do |zip_file|
+            zip_file.each do |entry|
+              if entry.name.start_with?('lib/') && entry.name.count('/') == 2
+                abi = entry.name.split('/')[1]
+                abis << abi unless abis.include?(abi)
+              end
+            end
+          end
+
+          unless abis.include?(EXPECTED_ABI)
+            raise "APK does not support #{EXPECTED_ABI} architecture, found: #{abis.join(', ')}"
+          end
+
+          Logger.info "✅ APK supports #{EXPECTED_ABI} architecture"
         end
       end
     end
