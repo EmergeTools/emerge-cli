@@ -116,7 +116,7 @@ module EmergeCLI
           if expiration_date > Time.now
             Logger.info '✅ Provisioning profile hasn\'t expired'
           else
-            Logger.info '❌ Provisioning profile is expired'
+            Logger.info "❌ Provisioning profile is expired. Expiration date: #{expiration_date}"
           end
 
           provisions_all_devices = parsed_data['ProvisionsAllDevices']
