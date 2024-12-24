@@ -45,7 +45,7 @@ module EmergeCLI
 
           app_path = Dir.glob("#{@options[:path]}/Products/Applications/*.app").first
           run_codesign_check(app_path)
-          read_entitlements(app_path)
+          read_provisioning_profile(app_path)
         end
 
         def handle_ipa
@@ -61,7 +61,7 @@ module EmergeCLI
             app_path = File.join(tmp_dir, 'Payload/*.app')
             app_path = Dir.glob(app_path).first
             run_codesign_check(app_path)
-            read_entitlements(app_path)
+            read_provisioning_profile(app_path)
           end
         end
 
@@ -70,7 +70,7 @@ module EmergeCLI
 
           app_path = @options[:path]
           run_codesign_check(app_path)
-          read_entitlements(app_path)
+          read_provisioning_profile(app_path)
         end
 
         def run_codesign_check(app_path)
@@ -88,7 +88,7 @@ module EmergeCLI
           Logger.info '✅ Codesign check passed'
         end
 
-        def read_entitlements(app_path)
+        def read_provisioning_profile(app_path)
           entitlements_path = File.join(app_path, 'embedded.mobileprovision')
           raise '❌ Entitlements file not found' unless File.exist?(entitlements_path)
 
