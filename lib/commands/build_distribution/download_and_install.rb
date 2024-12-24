@@ -64,8 +64,7 @@ module EmergeCLI
 
         def get_build_url(build_id)
           @network.get(
-            # path: 'http://localhost:4000/distribution/downloadUrl',
-            path: "http://localhost:4000/distribution/downloadUrl?buildId=#{build_id}",
+            path: '/distribution/downloadUrl',
             max_retries: 3,
             query: {
               buildId: build_id
