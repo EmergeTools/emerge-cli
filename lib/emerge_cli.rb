@@ -65,7 +65,7 @@ module EmergeCLI
   end
 
   register 'build-distribution' do |prefix|
-    prefix.register 'validate-app', Commands::ValidateApp
+    prefix.register 'validate-app', Commands::BuildDistribution::ValidateApp
     prefix.register 'install', Commands::BuildDistribution::DownloadAndInstall
   end
 end
