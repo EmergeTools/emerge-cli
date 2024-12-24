@@ -33,7 +33,7 @@ module EmergeCLI
             when '.app'
               handle_app
             else
-              raise 'Unknown file extension'
+              raise "Unknown file extension: #{file_extension}"
             end
           end
         end
