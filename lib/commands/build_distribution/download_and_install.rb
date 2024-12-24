@@ -10,7 +10,7 @@ module EmergeCLI
         desc 'Download build from Build Distribution'
 
         option :api_token, type: :string, required: false,
-                          desc: 'API token for authentication, defaults to ENV[EMERGE_API_TOKEN]'
+                           desc: 'API token for authentication, defaults to ENV[EMERGE_API_TOKEN]'
         option :build_id, type: :string, required: true, desc: 'Build ID to download'
         option :install, type: :boolean, default: true, required: false, desc: 'Install the build on the device'
         option :device_id, type: :string, required: false, desc: 'Device id to install the build'
@@ -68,7 +68,7 @@ module EmergeCLI
             max_retries: 3,
             query: {
               buildId: build_id
-            },
+            }
           )
         end
 
