@@ -17,6 +17,7 @@ require_relative 'commands/order_files/validate_xcode_project'
 require_relative 'commands/upload/build'
 require_relative 'commands/build_distribution/validate_app'
 require_relative 'commands/build_distribution/download_and_install'
+require_relative 'commands/autofixes/minify_strings'
 
 require_relative 'reaper/ast_parser'
 require_relative 'reaper/code_deleter'
@@ -67,6 +68,10 @@ module EmergeCLI
   register 'build-distribution' do |prefix|
     prefix.register 'validate-app', Commands::BuildDistribution::ValidateApp
     prefix.register 'install', Commands::BuildDistribution::DownloadAndInstall
+  end
+
+  register 'autofix' do |prefix|
+    prefix.register 'minify-strings', Commands::Autofixes::MinifyStrings
   end
 end
 
