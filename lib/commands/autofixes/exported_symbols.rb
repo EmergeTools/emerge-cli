@@ -10,8 +10,8 @@ module EmergeCLI
         option :path, type: :string, required: true, desc: 'Path to the xcarchive'
 
         # Constants
-        DEFAULT_EXPORTED_SYMBOLS = %{_main
-__mh_execute_header}.freeze
+        DEFAULT_EXPORTED_SYMBOLS = %(_main
+__mh_execute_header).freeze
         EXPORTED_SYMBOLS_FILE = 'EXPORTED_SYMBOLS_FILE'.freeze
         EXPORTED_SYMBOLS_PATH = '$(SRCROOT)/EmergeToolsHelperFiles/ExportedSymbols'.freeze
         EXPORTED_SYMBOLS_FILE_NAME = 'ExportedSymbols'.freeze
@@ -33,13 +33,12 @@ __mh_execute_header}.freeze
             emergetools_group.set_path(EMERGE_TOOLS_GROUP)
 
             unless emergetools_group.find_file_by_path(EXPORTED_SYMBOLS_FILE_NAME)
-              file = emergetools_group.new_file(EXPORTED_SYMBOLS_FILE_NAME)
+              emergetools_group.new_file(EXPORTED_SYMBOLS_FILE_NAME)
             end
 
             # Create Folder if it doesn't exist
-            unless File.exist?(File.join(File.dirname(@options[:path]), EMERGE_TOOLS_GROUP))
-              FileUtils.mkdir_p(File.join(File.dirname(@options[:path]), EMERGE_TOOLS_GROUP))
-            end
+
+            FileUtils.mkdir_p(File.join(File.dirname(@options[:path]), EMERGE_TOOLS_GROUP))
 
             # Create the exported symbols file
             path = File.join(File.dirname(@options[:path]), EMERGE_TOOLS_GROUP, EXPORTED_SYMBOLS_FILE_NAME)

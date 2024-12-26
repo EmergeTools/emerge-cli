@@ -7,14 +7,15 @@ module EmergeCLI
         EMERGE_TOOLS_GROUP = 'EmergeToolsHelperFiles'.freeze
         EXPORTED_SYMBOLS_FILE = 'EXPORTED_SYMBOLS_FILE'.freeze
         EXPORTED_SYMBOLS_PATH = '$(SRCROOT)/EmergeToolsHelperFiles/ExportedSymbols'.freeze
-        DEFAULT_EXPORTED_SYMBOLS = %{_main
-__mh_execute_header}.freeze
+        DEFAULT_EXPORTED_SYMBOLS = %(_main
+__mh_execute_header).freeze
 
         def setup
           @command = EmergeCLI::Commands::Autofixes::ExportedSymbols.new
 
           FileUtils.mkdir_p('tmp/test_autofix_exported_symbols')
-          FileUtils.cp_r('test/test_files/ExampleApp.xcodeproj', 'tmp/test_autofix_exported_symbols/ExampleApp.xcodeproj')
+          FileUtils.cp_r('test/test_files/ExampleApp.xcodeproj',
+                         'tmp/test_autofix_exported_symbols/ExampleApp.xcodeproj')
         end
 
         def teardown
@@ -32,7 +33,7 @@ __mh_execute_header}.freeze
           group = project.main_group
 
           emergetools_group = group.find_subpath(EMERGE_TOOLS_GROUP, false)
-          assert emergetools_group != nil
+          assert !emergetools_group.nil?
 
           project.targets[0].build_configurations.each do |config|
             assert_equal EXPORTED_SYMBOLS_PATH, config.build_settings[EXPORTED_SYMBOLS_FILE]
