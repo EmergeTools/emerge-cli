@@ -12,7 +12,8 @@ module EmergeCLI
         # Constants
         SCRIPT_NAME = 'EmergeTools Strip Binary Symbols'.freeze
         ENABLE_USER_SCRIPT_SANDBOXING = 'ENABLE_USER_SCRIPT_SANDBOXING'.freeze
-        INPUT_FILE = '${DWARF_DSYM_FOLDER_PATH}/${EXECUTABLE_NAME}.app.dSYM/Contents/Resources/DWARF/${EXECUTABLE_NAME}'.freeze
+        INPUT_FILE = '${DWARF_DSYM_FOLDER_PATH}/${EXECUTABLE_NAME}.app.dSYM/' \
+                     'Contents/Resources/DWARF/${EXECUTABLE_NAME}'.freeze
         SCRIPT_CONTENT = %{#!/bin/bash
 set -e
 
