@@ -18,7 +18,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3.3'
+          ruby-version: "3.3.3"
           bundler-cache: true
 
       - name: Run Rubocop
@@ -29,23 +29,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        ruby-version: ['3.3.3']
+        ruby-version: ["3.3.3"]
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Install dependencies
-        run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            sudo apt-get update
-            sudo apt-get install -y imagemagick
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            brew install imagemagick
-          fi
-        shell: bash
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -70,8 +60,18 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3.3'
+          ruby-version: "3.3.3"
           bundler-cache: true
+
+      - name: Install dependencies
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y imagemagick
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install imagemagick
+          fi
+        shell: bash
 
       - name: Create test images directory
         run: |
