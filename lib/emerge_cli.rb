@@ -36,7 +36,6 @@ require_relative 'utils/macho_parser'
 require_relative 'utils/version_check'
 
 require 'dry/cli'
-require 'pry-byebug'
 
 module EmergeCLI
   extend Dry::CLI::Registry
