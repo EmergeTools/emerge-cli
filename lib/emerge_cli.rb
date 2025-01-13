@@ -15,6 +15,11 @@ require_relative 'commands/order_files/download_order_files'
 require_relative 'commands/order_files/validate_linkmaps'
 require_relative 'commands/order_files/validate_xcode_project'
 require_relative 'commands/upload/build'
+require_relative 'commands/build_distribution/validate_app'
+require_relative 'commands/build_distribution/download_and_install'
+require_relative 'commands/autofixes/minify_strings'
+require_relative 'commands/autofixes/strip_binary_symbols'
+require_relative 'commands/autofixes/exported_symbols'
 
 require_relative 'reaper/ast_parser'
 require_relative 'reaper/code_deleter'
@@ -59,6 +64,17 @@ module EmergeCLI
     prefix.register 'download', Commands::DownloadOrderFiles
     prefix.register 'validate-linkmaps', Commands::ValidateLinkmaps
     prefix.register 'validate-xcode-project', Commands::ValidateXcodeProject
+  end
+
+  register 'build-distribution' do |prefix|
+    prefix.register 'validate-app', Commands::BuildDistribution::ValidateApp
+    prefix.register 'install', Commands::BuildDistribution::DownloadAndInstall
+  end
+
+  register 'autofix' do |prefix|
+    prefix.register 'minify-strings', Commands::Autofixes::MinifyStrings
+    prefix.register 'strip-binary-symbols', Commands::Autofixes::StripBinarySymbols
+    prefix.register 'exported-symbols', Commands::Autofixes::ExportedSymbols
   end
 end
 
