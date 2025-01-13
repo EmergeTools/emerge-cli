@@ -39,8 +39,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y imagemagick
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y imagemagick
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install imagemagick
+          fi
+        shell: bash
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
