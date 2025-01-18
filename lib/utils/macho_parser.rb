@@ -168,6 +168,32 @@ module EmergeCLI
       false
     end
 
+    def is_simulator_compatible?(binary_path)
+      load_binary(binary_path)
+
+      # Read architectures from the binary
+      magic = @binary_data[0, 4].unpack1('L<')
+
+      case magic
+      when 0xfeedface, 0xfeedfacf # Mach-O binary
+        archs = []
+        offset = 0
+        while offset < @binary_data.length
+          magic = @binary_data[offset, 4].unpack1('L<')
+          break unless [0xfeedface, 0xfeedfacf].include?(magic)
+
+          cpu_type = @binary_data[offset + 4, 4].unpack1('L<')
+          archs << cpu_type
+          offset += @binary_data[offset + 4 + 4, 4].unpack1('L<') # size of this architecture slice
+        end
+
+        # Check for x86_64 (7) or arm64 simulator builds (CPU_TYPE_ARM64 | CPU_ARCH_ABI64)
+        archs.include?(7) || archs.include?(0x0100000C)
+      else
+        false
+      end
+    end
+
     private
 
     def read_next_symbol(binary_data, current_address, end_address, current_symbol)

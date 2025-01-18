@@ -2,6 +2,7 @@ require 'dry/cli'
 require 'cfpropertylist'
 require 'zip'
 require 'rbconfig'
+require 'tmpdir'
 
 module EmergeCLI
   module Commands
@@ -87,9 +88,52 @@ module EmergeCLI
         end
 
         def install_ios_build(build_path)
-          command = "xcrun devicectl device install app -d #{@options[:device_id]} #{build_path}"
+          if @options[:device_id]
+            command = "xcrun devicectl device install app -d #{@options[:device_id]} #{build_path}"
+          else
+            # Get list of available simulators
+            simulators = `xcrun simctl list devices available`
+            # Find first available iPhone simulator (preferably iPhone 15)
+            simulator_id = if simulators =~ /iPhone 15.*?\(([\w-]+)\)/
+                            $1
+                          elsif simulators =~ /iPhone.*?\(([\w-]+)\)/
+                            $1
+                          else
+                            raise "No available iPhone simulator found"
+                          end
+
+            Logger.info "Booting simulator #{simulator_id}..."
+            result = system("xcrun simctl boot #{simulator_id}")
+            raise "Failed to boot simulator" unless result
+
+            Logger.info "Installing build on simulator..."
+            command = "xcrun simctl install #{simulator_id} #{build_path}"
+
+            # If the install fails, check if the build is simulator compatible for a better error message
+            unless system(command)
+              Dir.mktmpdir do |tmp_dir|
+                Zip::File.open(build_path) do |zip_file|
+                  app_entry = zip_file.glob('Payload/*.app').first
+                  raise "❌ No .app found in IPA" unless app_entry
+
+                  app_name = File.basename(app_entry.name, '.app')
+                  binary_path = "Payload/#{File.basename(app_entry.name)}/#{app_name}"
+                  zip_file.extract(binary_path, "#{tmp_dir}/binary")
+
+                  macho_parser = EmergeCLI::MachOParser.new
+                  unless macho_parser.is_simulator_compatible?("#{tmp_dir}/binary")
+                    raise "❌ This build is not compatible with simulators. Please use a real device or get a simulator build."
+                  end
+                end
+              end
+              # If we get here, it's simulator compatible but failed for another reason
+              raise "❌ Failed to install build"
+            end
+          end
+
           Logger.debug "Running command: #{command}"
-          `#{command}`
+          result = system(command)
+          raise "❌ Failed to install build" unless result
 
           Logger.info '✅ Build installed'
         end
