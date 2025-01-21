@@ -56,10 +56,10 @@ module EmergeCLI
             end
 
             begin
-            if @options[:install] && !output_name.nil?
-              install_ios_build(output_name) if platform == 'ios'
-              install_android_build(output_name) if platform == 'android'
-            end
+              if @options[:install] && !output_name.nil?
+                install_ios_build(output_name) if platform == 'ios'
+                install_android_build(output_name) if platform == 'android'
+              end
             rescue StandardError => e
               Logger.error "❌ Failed to install build: #{e.message}"
               raise e
@@ -94,7 +94,7 @@ module EmergeCLI
         end
 
         def install_ios_build(build_path)
-          device = EmergeCLI::XcodeDevice.new(device_id: @options[:device_id])
+          device = EmergeCLI::XcodeDeviceManager.new(device_id: @options[:device_id])
           device.install_app(build_path)
           Logger.info '✅ Build installed'
         end
