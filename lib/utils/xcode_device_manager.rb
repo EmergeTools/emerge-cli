@@ -11,7 +11,7 @@ module EmergeCLI
       if @device_id
         create_device(@device_id)
       else
-        find_and_boot_most_recently_used_simulator
+        find_connected_device || find_and_boot_most_recently_used_simulator
       end
     end
 
@@ -28,7 +28,7 @@ module EmergeCLI
     def find_connected_device
       Logger.info "Finding connected device..."
       devices_json = `xcrun xcdevice list`
-      Logger.debug "Device list output: #{devices_json}"
+      # Logger.debug "Device list output: #{devices_json}"
 
       devices_data = JSON.parse(devices_json)
       physical_devices = devices_data
@@ -40,7 +40,11 @@ module EmergeCLI
         end
 
       Logger.debug "Found physical devices: #{physical_devices}"
-      return nil if physical_devices.empty?
+
+      if physical_devices.empty?
+        Logger.info "No physical connected device found"
+        return nil
+      end
 
       device = physical_devices.first
       Logger.info "Found connected physical device: #{device['name']} (#{device['identifier']})"
@@ -48,6 +52,7 @@ module EmergeCLI
     end
 
     def find_and_boot_most_recently_used_simulator
+      Logger.info "Finding and booting most recently used simulator..."
       simulators_json = `xcrun simctl list devices --json`
       Logger.debug "Simulators JSON: #{simulators_json}"
 

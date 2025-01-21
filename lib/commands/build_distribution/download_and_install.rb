@@ -32,6 +32,7 @@ module EmergeCLI
             raise 'Build ID is required' unless @options[:build_id]
 
             output_name = nil
+            app_id = nil
 
             begin
               @network ||= EmergeCLI::Network.new(api_token:)
@@ -42,6 +43,7 @@ module EmergeCLI
 
               platform = response['platform']
               download_url = response['downloadUrl']
+              app_id = response['appId']
 
               extension = platform == 'ios' ? 'ipa' : 'apk'
               Logger.info 'Downloading build...'
@@ -57,7 +59,7 @@ module EmergeCLI
 
             begin
               if @options[:install] && !output_name.nil?
-                install_ios_build(output_name) if platform == 'ios'
+                install_ios_build(output_name, app_id) if platform == 'ios'
                 install_android_build(output_name) if platform == 'android'
               end
             rescue StandardError => e
@@ -93,11 +95,13 @@ module EmergeCLI
           end
         end
 
-        def install_ios_build(build_path)
+        def install_ios_build(build_path, app_id)
           device_manager = EmergeCLI::XcodeDeviceManager.new(device_id: @options[:device_id])
           device = device_manager.get_device
           device.install_app(build_path)
           Logger.info '✅ Build installed'
+          device.launch_app(app_id)
+          Logger.info '✅ Build launched'
         end
 
         def install_android_build(build_path)
