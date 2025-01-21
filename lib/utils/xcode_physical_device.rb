@@ -45,7 +45,7 @@ module EmergeCLI
           end
         end
       rescue Timeout::Error
-        raise "Installation timed out after 30 seconds. The device might be locked or installation might be stuck. Try unlocking the device and trying again."
+        raise 'Installation timed out after 30 seconds. The device might be locked or installation might be stuck. Try unlocking the device and trying again.'
       end
 
       true
@@ -64,16 +64,16 @@ module EmergeCLI
           unless success
             Logger.debug "Launch command output: #{output}"
             if output.include?('The operation couldn\'t be completed. Application is restricted')
-              raise "Failed to launch app: The app is restricted. Make sure the device is unlocked and the app is allowed to run."
+              raise 'Failed to launch app: The app is restricted. Make sure the device is unlocked and the app is allowed to run.'
             elsif output.include?('The operation couldn\'t be completed. Unable to launch')
-              raise "Failed to launch app: Unable to launch. The app might be in a bad state - try uninstalling and reinstalling."
+              raise 'Failed to launch app: Unable to launch. The app might be in a bad state - try uninstalling and reinstalling.'
             else
               raise "Failed to launch app #{bundle_id} on device: #{output}"
             end
           end
         end
       rescue Timeout::Error
-        raise "Launch timed out after 30 seconds. The device might be locked. Try unlocking the device and trying again."
+        raise 'Launch timed out after 30 seconds. The device might be locked. Try unlocking the device and trying again.'
       end
 
       true
@@ -82,39 +82,14 @@ module EmergeCLI
     private
 
     def check_device_compatibility(ipa_path)
-      Dir.mktmpdir do |tmp_dir|
-        Zip::File.open(ipa_path) do |zip_file|
-          Logger.debug "IPA contents:"
-          zip_file.each do |entry|
-            Logger.debug "  #{entry.name}"
-          end
+      supported_platforms = XcodeDeviceManager.get_supported_platforms(ipa_path)
+      Logger.debug "Supported platforms: #{supported_platforms.join(', ')}"
 
-          app_entry = zip_file.glob('**/*.app/').first ||
-                     zip_file.glob('**/*.app').first ||
-                     zip_file.find { |entry| entry.name.end_with?('.app/') || entry.name.end_with?('.app') }
-
-          raise "No .app found in .ipa file" unless app_entry
-          Logger.debug "Found app entry: #{app_entry.name}"
-
-          app_dir = app_entry.name.end_with?('/') ? app_entry.name.chomp('/') : app_entry.name
-          info_plist_path = "#{app_dir}/Info.plist"
-          info_plist_entry = zip_file.find_entry(info_plist_path)
-          raise "Info.plist not found in app bundle" unless info_plist_entry
-
-          info_plist_content = info_plist_entry.get_input_stream.read
-          plist = CFPropertyList::List.new(data: info_plist_content)
-          info_plist = CFPropertyList.native_types(plist.value)
-
-          supported_platforms = info_plist['CFBundleSupportedPlatforms'] || []
-          Logger.debug "Supported platforms: #{supported_platforms.join(', ')}"
-
-          unless supported_platforms.include?('iPhoneOS')
-            raise 'This build is not compatible with physical devices. Please use a simulator or make your build compatible with physical devices.'
-          end
-
-          Logger.debug 'Build is compatible with physical devices'
-        end
+      unless supported_platforms.include?('iPhoneOS')
+        raise 'This build is not compatible with physical devices. Please use a simulator or make your build compatible with physical devices.'
       end
+
+      Logger.debug 'Build is compatible with physical devices'
     end
 
     def extract_bundle_id_from_error(output)

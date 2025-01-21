@@ -23,17 +23,17 @@ module EmergeCLI
 
         Zip::File.open(ipa_path) do |zip_file|
           # Debug: List all entries to see what's in the IPA
-          Logger.debug "IPA contents:"
+          Logger.debug 'IPA contents:'
           zip_file.each do |entry|
             Logger.debug "  #{entry.name}"
           end
 
           # Try different patterns to find the .app directory
           app_entry = zip_file.glob('**/*.app/').first ||
-                     zip_file.glob('**/*.app').first ||
-                     zip_file.find { |entry| entry.name.end_with?('.app/') || entry.name.end_with?('.app') }
+                      zip_file.glob('**/*.app').first ||
+                      zip_file.find { |entry| entry.name.end_with?('.app/') || entry.name.end_with?('.app') }
 
-          raise "No .app found in .ipa file" unless app_entry
+          raise 'No .app found in .ipa file' unless app_entry
           Logger.debug "Found app entry: #{app_entry.name}"
 
           # Extract the .app directory and its contents
@@ -48,7 +48,7 @@ module EmergeCLI
           end
 
           extracted_app = Dir.glob(File.join(tmp_dir, '**/*.app')).first
-          raise "Failed to extract .app from .ipa" unless extracted_app
+          raise 'Failed to extract .app from .ipa' unless extracted_app
           Logger.debug "Extracted app at: #{extracted_app}"
 
           install_extracted_app(extracted_app)
@@ -88,13 +88,17 @@ module EmergeCLI
     end
 
     def check_simulator_compatibility(app_path)
-      info_plist_path = File.join(app_path, 'Info.plist')
-      raise "Info.plist not found in app bundle" unless File.exist?(info_plist_path)
+      supported_platforms = if app_path.end_with?('.ipa')
+                              XcodeDeviceManager.get_supported_platforms(app_path)
+                            else
+                              info_plist_path = File.join(app_path, 'Info.plist')
+                              raise 'Info.plist not found in app bundle' unless File.exist?(info_plist_path)
 
-      plist = CFPropertyList::List.new(file: info_plist_path)
-      info_plist = CFPropertyList.native_types(plist.value)
+                              plist = CFPropertyList::List.new(file: info_plist_path)
+                              info_plist = CFPropertyList.native_types(plist.value)
+                              info_plist['CFBundleSupportedPlatforms'] || []
+                            end
 
-      supported_platforms = info_plist['CFBundleSupportedPlatforms'] || []
       Logger.debug "Supported platforms: #{supported_platforms.join(', ')}"
 
       unless supported_platforms.include?('iPhoneSimulator')

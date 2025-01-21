@@ -14,9 +14,9 @@ module EmergeCLI
                            desc: 'API token for authentication, defaults to ENV[EMERGE_API_TOKEN]'
         option :build_id, type: :string, required: true, desc: 'Build ID to download'
         option :install, type: :boolean, default: true, required: false, desc: 'Install the build on the device'
-        option :device_id, type: :string, desc: "Specific device ID to target"
+        option :device_id, type: :string, desc: 'Specific device ID to target'
         option :device_type, type: :string, enum: %w[simulator physical any], default: 'any',
-                           desc: "Type of device to target (simulator/physical/any)"
+                             desc: 'Type of device to target (simulator/physical/any)'
         option :output, type: :string, required: false, desc: 'Output path for the downloaded build'
 
         def initialize(network: nil)
@@ -102,20 +102,21 @@ module EmergeCLI
 
         def install_ios_build(build_path, app_id)
           device_type = case @options[:device_type]
-                      when 'simulator'
-                        XcodeDeviceManager::DeviceType::SIMULATOR
-                      when 'physical'
-                        XcodeDeviceManager::DeviceType::PHYSICAL
-                      else
-                        XcodeDeviceManager::DeviceType::ANY
-                      end
+                        when 'simulator'
+                          XcodeDeviceManager::DeviceType::SIMULATOR
+                        when 'physical'
+                          XcodeDeviceManager::DeviceType::PHYSICAL
+                        else
+                          XcodeDeviceManager::DeviceType::ANY
+                        end
 
           device_manager = XcodeDeviceManager.new
           device = if @options[:device_id]
                      device_manager.find_device_by_id(@options[:device_id])
                    else
-                     device_manager.find_device_by_type(device_type)
+                     device_manager.find_device_by_type(device_type, build_path)
                    end
+
           device.install_app(build_path)
           Logger.info '✅ Build installed'
           device.launch_app(app_id)
