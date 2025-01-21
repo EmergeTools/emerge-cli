@@ -153,18 +153,5 @@ module EmergeCLI
       simulator.boot unless simulator_state == 'Booted'
       simulator
     end
-
-    def validate_device_type(device, required_type)
-      case required_type
-      when DeviceType::SIMULATOR
-        unless device.is_a?(XcodeSimulator)
-          raise "Device #{device.device_id} is a physical device, but simulator was requested"
-        end
-      when DeviceType::PHYSICAL
-        unless device.is_a?(XcodePhysicalDevice)
-          raise "Device #{device.device_id} is a simulator, but physical device was requested"
-        end
-      end
-    end
   end
 end
