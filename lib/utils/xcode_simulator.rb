@@ -1,6 +1,7 @@
 require 'English'
 require 'zip'
 require 'cfpropertylist'
+require 'fileutils'
 
 module EmergeCLI
   class XcodeSimulator
@@ -15,16 +16,36 @@ module EmergeCLI
     end
 
     def install_app(app_path)
-      command = "xcrun simctl install #{@device_id} \"#{app_path}\""
-      Logger.debug "Running command: #{command}"
+      if app_path.end_with?('.ipa')
+        Dir.mktmpdir do |tmp_dir|
+          Logger.debug "Extracting .app from .ipa in temporary directory: #{tmp_dir}"
 
-      output = `#{command} 2>&1`
-      success = $CHILD_STATUS.success?
+          Zip::File.open(app_path) do |zip_file|
+            # Find and extract the .app directory from Payload
+            app_entry = zip_file.glob('Payload/*.app').first
+            raise "No .app found in .ipa file" unless app_entry
 
-      return if success
-      Logger.debug "Install command output: #{output}"
-      check_simulator_compatibility(app_path)
-      raise "Failed to install build on simulator #{@device_id}"
+            # Get the parent directory name of the .app
+            app_dir = File.dirname(app_entry.name)
+
+            # Extract all files from the .app directory
+            zip_file.glob("#{app_dir}/**/*").each do |entry|
+              entry_path = File.join(tmp_dir, entry.name)
+              FileUtils.mkdir_p(File.dirname(entry_path))
+              zip_file.extract(entry, entry_path) unless File.exist?(entry_path)
+            end
+
+            # Find the extracted .app path
+            extracted_app = Dir.glob(File.join(tmp_dir, 'Payload/*.app')).first
+            raise "Failed to extract .app from .ipa" unless extracted_app
+
+            # Install the extracted .app
+            install_extracted_app(extracted_app)
+          end
+        end
+      else
+        install_extracted_app(app_path)
+      end
     end
 
     private
@@ -55,6 +76,19 @@ module EmergeCLI
           end
         end
       end
+    end
+
+    def install_extracted_app(app_path)
+      command = "xcrun simctl install #{@device_id} \"#{app_path}\""
+      Logger.debug "Running command: #{command}"
+
+      output = `#{command} 2>&1`
+      success = $CHILD_STATUS.success?
+
+      return if success
+      Logger.debug "Install command output: #{output}"
+      check_simulator_compatibility(app_path)
+      raise "Failed to install build on simulator #{@device_id}"
     end
   end
 end

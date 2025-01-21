@@ -25,6 +25,28 @@ module EmergeCLI
       end
     end
 
+    def find_connected_device
+      Logger.info "Finding connected device..."
+      devices_json = `xcrun xcdevice list`
+      Logger.debug "Device list output: #{devices_json}"
+
+      devices_data = JSON.parse(devices_json)
+      physical_devices = devices_data
+        .select do |device|
+          device['simulator'] == false &&
+          device['ignored'] == false &&
+          device['available'] == true &&
+          device['platform'] == 'com.apple.platform.iphoneos'
+        end
+
+      Logger.debug "Found physical devices: #{physical_devices}"
+      return nil if physical_devices.empty?
+
+      device = physical_devices.first
+      Logger.info "Found connected physical device: #{device['name']} (#{device['identifier']})"
+      XcodePhysicalDevice.new(device['identifier'])
+    end
+
     def find_and_boot_most_recently_used_simulator
       simulators_json = `xcrun simctl list devices --json`
       Logger.debug "Simulators JSON: #{simulators_json}"
