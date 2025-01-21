@@ -1,5 +1,6 @@
 require 'zip'
 require 'cfpropertylist'
+require 'json'
 
 module EmergeCLI
   class XcodeDevice
@@ -33,33 +34,34 @@ module EmergeCLI
     private
 
     def find_and_boot_simulator
-      simulators = `xcrun simctl list devices`
-      Logger.debug "Simulators: #{simulators}"
-      # Find all iPhone simulators with their versions
-      # If multiple simulators are found, take the latest OS version
-      # Filter out unavailable simulators
-      iphone_simulators = simulators.scan(/iPhone \d+(?:\s\(\d+\.\d+\))?.*?\(([\w-]+)\).*?(\(.*?\))/)
-        .map do |match|
-          id = match[0]
-          state = match[1].tr('()', '')
-          # Check if simulator is available (not marked as unavailable in the output)
-          is_available = !simulators.include?("(unavailable, runtime profile not found") ||
-                        !simulators.match?(/#{Regexp.escape(id)}.*?unavailable/)
-          version = simulators.match(/iPhone \d+(?:\s\((\d+\.\d+)\))?.*?#{id}/)&.[](1)&.to_f || 0
-          [id, state, version, is_available]
+      simulators_json = `xcrun simctl list devices --json`
+      Logger.debug "Simulators JSON: #{simulators_json}"
+
+      simulators_data = JSON.parse(simulators_json)
+
+      # Collect all available iPhone simulators across all runtimes
+      iphone_simulators = simulators_data['devices'].flat_map do |runtime, devices|
+        next [] unless runtime.include?('iOS') # Only include iOS devices
+
+        devices.select { |device|
+          device['name'].start_with?('iPhone') &&
+          device['isAvailable'] &&
+          !device['isDeleted']
+        }.map do |device|
+          version = runtime.match(/iOS-(\d+)-(\d+)/)&.captures&.join('.').to_f
+          last_booted = device['lastBootedAt'] ? Time.parse(device['lastBootedAt']) : Time.at(0)
+          [device['udid'], device['state'], version, last_booted]
         end
-        .select { |_, _, _, is_available| is_available }
-        .sort_by { |_, _, version, _| version }
-        .reverse
-        .map { |id, state, version, _| [id, state, version] }
+      end.sort_by { |_, _, _, last_booted| last_booted }.reverse # Sort by most recently booted
 
       Logger.debug "iPhone simulators: #{iphone_simulators}"
 
       raise "No available iPhone simulator found" unless iphone_simulators.any?
 
-      simulator_id, simulator_state, version = iphone_simulators.first
+      simulator_id, simulator_state, version, last_booted = iphone_simulators.first
       version_str = version.zero? ? "" : " (#{version})"
-      Logger.info "Found simulator #{simulator_id}#{version_str} (#{simulator_state})"
+      last_booted_str = last_booted == Time.at(0) ? "never" : last_booted.strftime("%Y-%m-%d %H:%M:%S")
+      Logger.info "Found simulator #{simulator_id}#{version_str} (#{simulator_state}, last booted: #{last_booted_str})"
 
       unless simulator_state == "Booted"
         Logger.info "Booting simulator #{simulator_id}..."
