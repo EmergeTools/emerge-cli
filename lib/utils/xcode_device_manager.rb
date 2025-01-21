@@ -3,32 +3,54 @@ require_relative 'xcode_simulator'
 
 module EmergeCLI
   class XcodeDeviceManager
-    def initialize(device_id: nil)
-      @device_id = device_id
+    class DeviceType
+      SIMULATOR = :simulator
+      PHYSICAL = :physical
+      ANY = :any
     end
 
-    def get_device
-      if @device_id
-        create_device(@device_id)
+    def find_device_by_id(device_id)
+      # Quick check based on device ID format
+      expected_type = device_id.start_with?('00') ? DeviceType::PHYSICAL : DeviceType::SIMULATOR
+      Logger.debug "Device ID #{device_id} suggests a #{expected_type} device"
+
+      if expected_type == DeviceType::PHYSICAL
+        output = `xcrun devicectl list devices 2>/dev/null`
+        return XcodePhysicalDevice.new(device_id) if output.include?(device_id)
       else
+        output = `xcrun simctl list devices 2>/dev/null`
+        return XcodeSimulator.new(device_id) if output.include?(device_id)
+      end
+
+      # If not found, try the other type as fallback
+      if expected_type == DeviceType::PHYSICAL
+        output = `xcrun simctl list devices 2>/dev/null`
+        return XcodeSimulator.new(device_id) if output.include?(device_id)
+      else
+        output = `xcrun devicectl list devices 2>/dev/null`
+        return XcodePhysicalDevice.new(device_id) if output.include?(device_id)
+      end
+
+      raise "No device found with ID: #{device_id}"
+    end
+
+    def find_device_by_type(device_type)
+      case device_type
+      when DeviceType::SIMULATOR
+        find_and_boot_most_recently_used_simulator
+      when DeviceType::PHYSICAL
+        find_connected_device
+      when DeviceType::ANY
         find_connected_device || find_and_boot_most_recently_used_simulator
       end
     end
 
     private
 
-    def create_device(device_id)
-      if device_id.start_with?('00')
-        XcodePhysicalDevice.new(device_id)
-      else
-        XcodeSimulator.new(device_id)
-      end
-    end
-
     def find_connected_device
       Logger.info "Finding connected device..."
       devices_json = `xcrun xcdevice list`
-      # Logger.debug "Device list output: #{devices_json}"
+      Logger.debug "Device list output: #{devices_json}"
 
       devices_data = JSON.parse(devices_json)
       physical_devices = devices_data
@@ -84,6 +106,19 @@ module EmergeCLI
       simulator = XcodeSimulator.new(simulator_id)
       simulator.boot unless simulator_state == 'Booted'
       simulator
+    end
+
+    def validate_device_type(device, required_type)
+      case required_type
+      when DeviceType::SIMULATOR
+        unless device.is_a?(XcodeSimulator)
+          raise "Device #{device.device_id} is a physical device, but simulator was requested"
+        end
+      when DeviceType::PHYSICAL
+        unless device.is_a?(XcodePhysicalDevice)
+          raise "Device #{device.device_id} is a simulator, but physical device was requested"
+        end
+      end
     end
   end
 end
