@@ -94,7 +94,8 @@ module EmergeCLI
         end
 
         def install_ios_build(build_path)
-          device = EmergeCLI::XcodeDeviceManager.new(device_id: @options[:device_id])
+          device_manager = EmergeCLI::XcodeDeviceManager.new(device_id: @options[:device_id])
+          device = device_manager.get_device
           device.install_app(build_path)
           Logger.info '✅ Build installed'
         end
