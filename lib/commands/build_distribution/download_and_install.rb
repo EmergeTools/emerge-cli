@@ -31,6 +31,8 @@ module EmergeCLI
 
             raise 'Build ID is required' unless @options[:build_id]
 
+            output_name = nil
+
             begin
               @network ||= EmergeCLI::Network.new(api_token:)
 
@@ -46,17 +48,21 @@ module EmergeCLI
               output_name = @options[:output] || "#{@options[:build_id]}.#{extension}"
               `curl --progress-bar -L '#{download_url}' -o #{output_name} `
               Logger.info "✅ Build downloaded to #{output_name}"
-
-              if @options[:install]
-                install_ios_build(output_name) if platform == 'ios'
-                install_android_build(output_name) if platform == 'android'
-              end
             rescue StandardError => e
-              Logger.error "Failed to download build: #{e.message}"
-              Logger.error 'Check your parameters and try again'
+              Logger.error "❌ Failed to download build: #{e.message}"
               raise e
             ensure
               @network&.close
+            end
+
+            begin
+            if @options[:install] && !output_name.nil?
+              install_ios_build(output_name) if platform == 'ios'
+              install_android_build(output_name) if platform == 'android'
+            end
+            rescue StandardError => e
+              Logger.error "❌ Failed to install build: #{e.message}"
+              raise e
             end
           end
         end
@@ -89,25 +95,7 @@ module EmergeCLI
 
         def install_ios_build(build_path)
           device = EmergeCLI::XcodeDevice.new(device_id: @options[:device_id])
-
-          if @options[:device_id]
-            device.install_app(build_path)
-          else
-            Dir.mktmpdir do |tmp_dir|
-              Zip::File.open(build_path) do |zip_file|
-                Logger.debug "Extracting IPA..."
-                zip_file.each do |entry|
-                  entry.extract("#{tmp_dir}/#{entry.name}")
-                end
-              end
-
-              app_path = Dir.glob("#{tmp_dir}/Payload/*.app").first
-              raise "❌ No .app found in IPA" unless app_path
-
-              device.install_app(app_path)
-            end
-          end
-
+          device.install_app(build_path)
           Logger.info '✅ Build installed'
         end
 
