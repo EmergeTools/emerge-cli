@@ -34,6 +34,7 @@ require_relative 'utils/profiler'
 require_relative 'utils/project_detector'
 require_relative 'utils/macho_parser'
 require_relative 'utils/version_check'
+require_relative 'utils/xcode_device'
 
 require 'dry/cli'
 
