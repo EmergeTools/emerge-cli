@@ -105,7 +105,8 @@ module EmergeCLI
       Logger.debug "Supported platforms: #{supported_platforms.join(', ')}"
 
       unless supported_platforms.include?('iPhoneSimulator')
-        raise 'This build is not compatible with simulators. Please use a real device or make your build compatible with simulators.'
+        raise 'This build is not compatible with simulators. ' \
+              'Please use a real device or make your build compatible with simulators.'
       end
 
       Logger.debug 'Build is compatible with simulators'

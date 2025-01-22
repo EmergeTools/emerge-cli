@@ -234,10 +234,10 @@ module EmergeCLI
       }.to_json
 
       env = FakeEnvironment.new({
-        'xcrun xcdevice list' => devices_json,
-        'xcrun simctl list devices --json' => simulator_json,
-        'xcrun simctl boot simulator-id' => '' # Empty string = success
-      })
+                                  'xcrun xcdevice list' => devices_json,
+                                  'xcrun simctl list devices --json' => simulator_json,
+                                  'xcrun simctl boot simulator-id' => '' # Empty string = success
+                                })
       device_manager = XcodeDeviceManager.new(environment: env)
 
       device = device_manager.find_device_by_type(

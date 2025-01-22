@@ -29,7 +29,9 @@ module EmergeCLI
           if output.include?('ERROR:') || output.include?('error:')
             if output.include?('This provisioning profile cannot be installed on this device')
               bundle_id = extract_bundle_id_from_error(output)
-              raise "Failed to install app: The provisioning profile for #{bundle_id} is not valid for this device. Make sure the device's UDID is included in the provisioning profile."
+              raise "Failed to install app: The provisioning profile for #{bundle_id} is not " \
+                    "valid for this device. Make sure the device's UDID is included in the " \
+                    'provisioning profile.'
             elsif output.include?('Unable to Install')
               error_message = output.match(/Unable to Install.*\n.*NSLocalizedRecoverySuggestion = ([^\n]+)/)&.[](1)
               check_device_compatibility(ipa_path)
@@ -47,7 +49,8 @@ module EmergeCLI
           end
         end
       rescue Timeout::Error
-        raise 'Installation timed out after 30 seconds. The device might be locked or installation might be stuck. Try unlocking the device and trying again.'
+        raise 'Installation timed out after 30 seconds. The device might be locked or ' \
+              'installation might be stuck. Try unlocking the device and trying again.'
       end
 
       true
@@ -66,16 +69,19 @@ module EmergeCLI
           unless success
             Logger.debug "Launch command output: #{output}"
             if output.include?('The operation couldn\'t be completed. Application is restricted')
-              raise 'Failed to launch app: The app is restricted. Make sure the device is unlocked and the app is allowed to run.'
+              raise 'Failed to launch app: The app is restricted. Make sure the device is ' \
+                    'unlocked and the app is allowed to run.'
             elsif output.include?('The operation couldn\'t be completed. Unable to launch')
-              raise 'Failed to launch app: Unable to launch. The app might be in a bad state - try uninstalling and reinstalling.'
+              raise 'Failed to launch app: Unable to launch. The app might be in a bad state - ' \
+                    'try uninstalling and reinstalling.'
             else
               raise "Failed to launch app #{bundle_id} on device: #{output}"
             end
           end
         end
       rescue Timeout::Error
-        raise 'Launch timed out after 30 seconds. The device might be locked. Try unlocking the device and trying again.'
+        raise 'Launch timed out after 30 seconds. The device might be locked. ' \
+              'Try unlocking the device and trying again.'
       end
 
       true
@@ -88,7 +94,8 @@ module EmergeCLI
       Logger.debug "Supported platforms: #{supported_platforms.join(', ')}"
 
       unless supported_platforms.include?('iPhoneOS')
-        raise 'This build is not compatible with physical devices. Please use a simulator or make your build compatible with physical devices.'
+        raise 'This build is not compatible with physical devices. Please use a simulator ' \
+              'or make your build compatible with physical devices.'
       end
 
       Logger.debug 'Build is compatible with physical devices'

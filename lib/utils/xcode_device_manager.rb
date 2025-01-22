@@ -48,7 +48,9 @@ module EmergeCLI
       found_device = devices_data.find { |device| device['identifier'] == device_id }
       raise "No device found with ID: #{device_id}" unless found_device
 
-      Logger.info "✅ Found device: #{found_device['name']} (#{found_device['identifier']}, #{found_device['simulator'] ? 'simulator' : 'physical'})"
+      device_type = found_device['simulator'] ? 'simulator' : 'physical'
+      Logger.info "✅ Found device: #{found_device['name']} " \
+                 "(#{found_device['identifier']}, #{device_type})"
       if found_device['simulator']
         XcodeSimulator.new(found_device['identifier'])
       else
