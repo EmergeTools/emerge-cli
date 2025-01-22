@@ -57,7 +57,6 @@ module EmergeCLI
     end
 
     def launch_app(bundle_id)
-      Logger.info "Launching app #{bundle_id} on device #{@device_id}..."
       command = "xcrun devicectl device process launch --device #{@device_id} #{bundle_id}"
       Logger.debug "Running command: #{command}"
 

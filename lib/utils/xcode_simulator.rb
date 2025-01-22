@@ -60,7 +60,6 @@ module EmergeCLI
     end
 
     def launch_app(bundle_id)
-      Logger.info "Launching app #{bundle_id} on simulator #{@device_id}..."
       command = "xcrun simctl launch #{@device_id} #{bundle_id}"
       Logger.debug "Running command: #{command}"
 

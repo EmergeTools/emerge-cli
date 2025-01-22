@@ -117,8 +117,11 @@ module EmergeCLI
                      device_manager.find_device_by_type(device_type, build_path)
                    end
 
+          Logger.info "Installing build on #{device.device_id}"
           device.install_app(build_path)
           Logger.info '✅ Build installed'
+
+          Logger.info "Launching app #{app_id}..."
           device.launch_app(app_id)
           Logger.info '✅ Build launched'
         end
