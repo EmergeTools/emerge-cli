@@ -127,7 +127,7 @@ module EmergeCLI
                                 })
       device_manager = XcodeDeviceManager.new(environment: env)
 
-      device = device_manager.find_device_by_type(XcodeDeviceManager::DeviceType::SIMULATOR, nil)
+      device = device_manager.find_device_by_type(XcodeDeviceManager::DeviceType::VIRTUAL, nil)
       assert_instance_of XcodeSimulator, device
       assert_equal 'simulator-id', device.device_id
     end
