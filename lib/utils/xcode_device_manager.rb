@@ -50,7 +50,7 @@ module EmergeCLI
 
       device_type = found_device['simulator'] ? 'simulator' : 'physical'
       Logger.info "✅ Found device: #{found_device['name']} " \
-                 "(#{found_device['identifier']}, #{device_type})"
+                  "(#{found_device['identifier']}, #{device_type})"
       if found_device['simulator']
         XcodeSimulator.new(found_device['identifier'])
       else
