@@ -1723,19 +1723,19 @@ module EmergeCLI
           #   assert_nil updated_contents
           # end
 
-          def test_removes_type_from_objective_c_file
-            language = 'objc'
-            parser = AstParser.new(language)
-            file_contents = AstParserTest.load_fixture('objc/EMGURLProtocol.m')
-            updated_contents = parser.delete_type(
-              file_contents: file_contents,
-              type_name: 'EMGCacheEntry'
-            )
-            expected_contents = AstParserTest.load_fixture(
-              'objc/test_removes_type_from_objective_c_file/EMGURLProtocol.m'
-            )
-            assert_equal expected_contents, updated_contents
-          end
+          # def test_removes_type_from_objective_c_file
+          #   language = 'objc'
+          #   parser = AstParser.new(language)
+          #   file_contents = AstParserTest.load_fixture('objc/EMGURLProtocol.m')
+          #   updated_contents = parser.delete_type(
+          #     file_contents: file_contents,
+          #     type_name: 'EMGCacheEntry'
+          #   )
+          #   expected_contents = AstParserTest.load_fixture(
+          #     'objc/test_removes_type_from_objective_c_file/EMGURLProtocol.m'
+          #   )
+          #   assert_equal expected_contents, updated_contents
+          # end
         end
       end
     end

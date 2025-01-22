@@ -2,6 +2,7 @@ require 'dry/cli'
 require 'cfpropertylist'
 require 'zip'
 require 'rbconfig'
+require 'tmpdir'
 
 module EmergeCLI
   module Commands
@@ -13,7 +14,9 @@ module EmergeCLI
                            desc: 'API token for authentication, defaults to ENV[EMERGE_API_TOKEN]'
         option :build_id, type: :string, required: true, desc: 'Build ID to download'
         option :install, type: :boolean, default: true, required: false, desc: 'Install the build on the device'
-        option :device_id, type: :string, required: false, desc: 'Device id to install the build'
+        option :device_id, type: :string, desc: 'Specific device ID to target'
+        option :device_type, type: :string, enum: %w[virtual physical any], default: 'any',
+                             desc: 'Type of device to target (virtual/physical/any)'
         option :output, type: :string, required: false, desc: 'Output path for the downloaded build'
 
         def initialize(network: nil)
@@ -30,6 +33,9 @@ module EmergeCLI
 
             raise 'Build ID is required' unless @options[:build_id]
 
+            output_name = nil
+            app_id = nil
+
             begin
               @network ||= EmergeCLI::Network.new(api_token:)
 
@@ -39,23 +45,31 @@ module EmergeCLI
 
               platform = response['platform']
               download_url = response['downloadUrl']
+              app_id = response['appId']
 
               extension = platform == 'ios' ? 'ipa' : 'apk'
               Logger.info 'Downloading build...'
               output_name = @options[:output] || "#{@options[:build_id]}.#{extension}"
               `curl --progress-bar -L '#{download_url}' -o #{output_name} `
               Logger.info "✅ Build downloaded to #{output_name}"
-
-              if @options[:install]
-                install_ios_build(output_name) if platform == 'ios'
-                install_android_build(output_name) if platform == 'android'
-              end
             rescue StandardError => e
-              Logger.error "Failed to download build: #{e.message}"
-              Logger.error 'Check your parameters and try again'
+              Logger.error "❌ Failed to download build: #{e.message}"
               raise e
             ensure
               @network&.close
+            end
+
+            begin
+              if @options[:install] && !output_name.nil?
+                if platform == 'ios'
+                  install_ios_build(output_name, app_id)
+                elsif platform == 'android'
+                  install_android_build(output_name)
+                end
+              end
+            rescue StandardError => e
+              Logger.error "❌ Failed to install build: #{e.message}"
+              raise e
             end
           end
         end
@@ -86,12 +100,30 @@ module EmergeCLI
           end
         end
 
-        def install_ios_build(build_path)
-          command = "xcrun devicectl device install app -d #{@options[:device_id]} #{build_path}"
-          Logger.debug "Running command: #{command}"
-          `#{command}`
+        def install_ios_build(build_path, app_id)
+          device_type = case @options[:device_type]
+                        when 'simulator'
+                          XcodeDeviceManager::DeviceType::VIRTUAL
+                        when 'physical'
+                          XcodeDeviceManager::DeviceType::PHYSICAL
+                        else
+                          XcodeDeviceManager::DeviceType::ANY
+                        end
 
+          device_manager = XcodeDeviceManager.new
+          device = if @options[:device_id]
+                     device_manager.find_device_by_id(@options[:device_id])
+                   else
+                     device_manager.find_device_by_type(device_type, build_path)
+                   end
+
+          Logger.info "Installing build on #{device.device_id}"
+          device.install_app(build_path)
           Logger.info '✅ Build installed'
+
+          Logger.info "Launching app #{app_id}..."
+          device.launch_app(app_id)
+          Logger.info '✅ Build launched'
         end
 
         def install_android_build(build_path)

@@ -24,6 +24,7 @@ require_relative 'commands/autofixes/exported_symbols'
 require_relative 'reaper/ast_parser'
 require_relative 'reaper/code_deleter'
 
+require_relative 'utils/environment'
 require_relative 'utils/git_info_provider'
 require_relative 'utils/git_result'
 require_relative 'utils/github'
@@ -34,6 +35,9 @@ require_relative 'utils/profiler'
 require_relative 'utils/project_detector'
 require_relative 'utils/macho_parser'
 require_relative 'utils/version_check'
+require_relative 'utils/xcode_device_manager'
+require_relative 'utils/xcode_simulator'
+require_relative 'utils/xcode_physical_device'
 
 require 'dry/cli'
 
