@@ -13,7 +13,7 @@ module EmergeCLI
 
       def execute_command(command)
         @commands << command
-        @responses[command] || ""
+        @responses[command] || ''
       end
     end
 
@@ -28,12 +28,12 @@ module EmergeCLI
         zipfile.mkdir('Payload/TestApp.app')
 
         plist = CFPropertyList::List.new
-        plist.value = CFPropertyList.guess({ 'CFBundleSupportedPlatforms' => ['iPhoneOS', 'iPhoneSimulator'] })
+        plist.value = CFPropertyList.guess({ 'CFBundleSupportedPlatforms' => %w[iPhoneOS iPhoneSimulator] })
         zipfile.get_output_stream('Payload/TestApp.app/Info.plist') { |f| f.write plist.to_str }
       end
 
       platforms = XcodeDeviceManager.get_supported_platforms(ipa_path)
-      assert_equal ['iPhoneOS', 'iPhoneSimulator'], platforms
+      assert_equal %w[iPhoneOS iPhoneSimulator], platforms
     ensure
       FileUtils.rm_rf(File.dirname(ipa_path))
     end
@@ -51,8 +51,8 @@ module EmergeCLI
       ].to_json
 
       env = FakeEnvironment.new({
-        'xcrun simctl list devices --json' => devices_json
-      })
+                                  'xcrun simctl list devices --json' => devices_json
+                                })
       device_manager = XcodeDeviceManager.new(environment: env)
 
       device = device_manager.find_device_by_id(device_id)
@@ -73,8 +73,8 @@ module EmergeCLI
       ].to_json
 
       env = FakeEnvironment.new({
-        'xcrun simctl list devices --json' => devices_json
-      })
+                                  'xcrun simctl list devices --json' => devices_json
+                                })
       device_manager = XcodeDeviceManager.new(environment: env)
 
       device = device_manager.find_device_by_id(device_id)
@@ -95,8 +95,8 @@ module EmergeCLI
       ].to_json
 
       env = FakeEnvironment.new({
-        'xcrun simctl list devices --json' => devices_json
-      })
+                                  'xcrun simctl list devices --json' => devices_json
+                                })
       device_manager = XcodeDeviceManager.new(environment: env)
 
       error = assert_raises(RuntimeError) do
@@ -122,9 +122,9 @@ module EmergeCLI
       }.to_json
 
       env = FakeEnvironment.new({
-        'xcrun simctl list devices --json' => simulator_json,
-        'xcrun simctl boot simulator-id' => '' # Empty string = success
-      })
+                                  'xcrun simctl list devices --json' => simulator_json,
+                                  'xcrun simctl boot simulator-id' => '' # Empty string = success
+                                })
       device_manager = XcodeDeviceManager.new(environment: env)
 
       device = device_manager.find_device_by_type(XcodeDeviceManager::DeviceType::SIMULATOR, nil)
@@ -145,8 +145,8 @@ module EmergeCLI
       ].to_json
 
       env = FakeEnvironment.new({
-        'xcrun xcdevice list' => physical_device_json
-      })
+                                  'xcrun xcdevice list' => physical_device_json
+                                })
       device_manager = XcodeDeviceManager.new(environment: env)
 
       device = device_manager.find_device_by_type(XcodeDeviceManager::DeviceType::PHYSICAL, nil)
@@ -180,8 +180,8 @@ module EmergeCLI
       end
 
       env = FakeEnvironment.new({
-        'xcrun xcdevice list' => physical_device_json
-      })
+                                  'xcrun xcdevice list' => physical_device_json
+                                })
       device_manager = XcodeDeviceManager.new(environment: env)
 
       device = device_manager.find_device_by_type(

@@ -49,9 +49,11 @@ module EmergeCLI
       raise "No device found with ID: #{device_id}" unless found_device
 
       Logger.info "✅ Found device: #{found_device['name']} (#{found_device['identifier']}, #{found_device['simulator'] ? 'simulator' : 'physical'})"
-      found_device['simulator'] ?
-        XcodeSimulator.new(found_device['identifier']) :
+      if found_device['simulator']
+        XcodeSimulator.new(found_device['identifier'])
+      else
         XcodePhysicalDevice.new(found_device['identifier'])
+      end
     end
 
     def find_device_by_type(device_type, ipa_path)
