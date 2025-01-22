@@ -42,7 +42,7 @@ module EmergeCLI
 
     def find_device_by_id(device_id)
       Logger.debug "Looking for device with ID: #{device_id}"
-      devices_json = execute_command('xcrun simctl list devices --json')
+      devices_json = execute_command('xcrun xcdevice list')
       devices_data = JSON.parse(devices_json)
 
       found_device = devices_data.find { |device| device['identifier'] == device_id }
@@ -63,7 +63,7 @@ module EmergeCLI
       when DeviceType::PHYSICAL
         find_connected_device
       when DeviceType::ANY
-        # Check supported platforms to make intelligent choice
+        # Check supported platforms in Info.plist to make intelligent choice
         supported_platforms = self.class.get_supported_platforms(ipa_path)
         Logger.debug "Build supports platforms: #{supported_platforms.join(', ')}"
 

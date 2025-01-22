@@ -51,7 +51,7 @@ module EmergeCLI
       ].to_json
 
       env = FakeEnvironment.new({
-                                  'xcrun simctl list devices --json' => devices_json
+                                  'xcrun xcdevice list' => devices_json
                                 })
       device_manager = XcodeDeviceManager.new(environment: env)
 
@@ -73,7 +73,7 @@ module EmergeCLI
       ].to_json
 
       env = FakeEnvironment.new({
-                                  'xcrun simctl list devices --json' => devices_json
+                                  'xcrun xcdevice list' => devices_json
                                 })
       device_manager = XcodeDeviceManager.new(environment: env)
 
@@ -95,7 +95,7 @@ module EmergeCLI
       ].to_json
 
       env = FakeEnvironment.new({
-                                  'xcrun simctl list devices --json' => devices_json
+                                  'xcrun xcdevice list' => devices_json
                                 })
       device_manager = XcodeDeviceManager.new(environment: env)
 
@@ -157,6 +157,13 @@ module EmergeCLI
     def test_find_device_by_type_any_prefers_physical_when_supported
       physical_device_json = [
         {
+          'identifier' => 'simulator-id',
+          'name' => 'iPhone 14',
+          'simulator' => true,
+          'available' => true,
+          'state' => 'Shutdown'
+        },
+        {
           'identifier' => '00008030-001A35E11A88003A',
           'name' => 'iPhone',
           'simulator' => false,
@@ -166,14 +173,11 @@ module EmergeCLI
         }
       ].to_json
 
-      # Create test IPA
       ipa_path = 'test/fixtures/test.ipa'
       FileUtils.mkdir_p("#{File.dirname(ipa_path)}/Payload/TestApp.app")
       Zip::File.open(ipa_path, create: true) do |zipfile|
-        # Add directories first
         zipfile.mkdir('Payload')
         zipfile.mkdir('Payload/TestApp.app')
-
         plist = CFPropertyList::List.new
         plist.value = CFPropertyList.guess({ 'CFBundleSupportedPlatforms' => ['iPhoneOS'] })
         zipfile.get_output_stream('Payload/TestApp.app/Info.plist') { |f| f.write plist.to_str }
@@ -189,6 +193,60 @@ module EmergeCLI
         ipa_path
       )
       assert_instance_of XcodePhysicalDevice, device
+    ensure
+      FileUtils.rm_rf(ipa_path)
+    end
+
+    def test_find_device_by_type_any_falls_back_to_simulator_when_supported
+      devices_json = [
+        {
+          'identifier' => 'simulator-id',
+          'name' => 'iPhone 14',
+          'simulator' => true,
+          'available' => true,
+          'state' => 'Shutdown'
+        }
+      ].to_json
+
+      ipa_path = 'test/fixtures/test.ipa'
+      FileUtils.mkdir_p("#{File.dirname(ipa_path)}/Payload/TestApp.app")
+      Zip::File.open(ipa_path, create: true) do |zipfile|
+        zipfile.mkdir('Payload')
+        zipfile.mkdir('Payload/TestApp.app')
+        plist = CFPropertyList::List.new
+        plist.value = CFPropertyList.guess({ 'CFBundleSupportedPlatforms' => %w[iPhoneOS iPhoneSimulator] })
+        zipfile.get_output_stream('Payload/TestApp.app/Info.plist') { |f| f.write plist.to_str }
+      end
+
+      simulator_json = {
+        'devices' => {
+          'iOS-17-0' => [
+            {
+              'udid' => 'simulator-id',
+              'name' => 'iPhone 14',
+              'state' => 'Shutdown',
+              'isAvailable' => true,
+              'isDeleted' => false,
+              'lastBootedAt' => Time.now.iso8601
+            }
+          ]
+        }
+      }.to_json
+
+      env = FakeEnvironment.new({
+        'xcrun xcdevice list' => devices_json,
+        'xcrun simctl list devices --json' => simulator_json,
+        'xcrun simctl boot simulator-id' => '' # Empty string = success
+      })
+      device_manager = XcodeDeviceManager.new(environment: env)
+
+      device = device_manager.find_device_by_type(
+        XcodeDeviceManager::DeviceType::ANY,
+        ipa_path
+      )
+
+      assert_instance_of XcodeSimulator, device
+      assert_equal 'simulator-id', device.device_id
     ensure
       FileUtils.rm_rf(ipa_path)
     end
