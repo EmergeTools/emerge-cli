@@ -6,7 +6,7 @@ require 'cfpropertylist'
 module EmergeCLI
   class XcodeDeviceManager
     class DeviceType
-      SIMULATOR = :simulator
+      VIRTUAL = :virtual
       PHYSICAL = :physical
       ANY = :any
     end
@@ -58,7 +58,7 @@ module EmergeCLI
 
     def find_device_by_type(device_type, ipa_path)
       case device_type
-      when DeviceType::SIMULATOR
+      when DeviceType::VIRTUAL
         find_and_boot_most_recently_used_simulator
       when DeviceType::PHYSICAL
         find_connected_device

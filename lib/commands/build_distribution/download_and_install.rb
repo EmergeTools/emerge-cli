@@ -15,8 +15,8 @@ module EmergeCLI
         option :build_id, type: :string, required: true, desc: 'Build ID to download'
         option :install, type: :boolean, default: true, required: false, desc: 'Install the build on the device'
         option :device_id, type: :string, desc: 'Specific device ID to target'
-        option :device_type, type: :string, enum: %w[simulator physical any], default: 'any',
-                             desc: 'Type of device to target (simulator/physical/any)'
+        option :device_type, type: :string, enum: %w[virtual physical any], default: 'any',
+                             desc: 'Type of device to target (virtual/physical/any)'
         option :output, type: :string, required: false, desc: 'Output path for the downloaded build'
 
         def initialize(network: nil)
@@ -103,7 +103,7 @@ module EmergeCLI
         def install_ios_build(build_path, app_id)
           device_type = case @options[:device_type]
                         when 'simulator'
-                          XcodeDeviceManager::DeviceType::SIMULATOR
+                          XcodeDeviceManager::DeviceType::VIRTUAL
                         when 'physical'
                           XcodeDeviceManager::DeviceType::PHYSICAL
                         else
