@@ -6,6 +6,8 @@ require 'fileutils'
 
 module EmergeCLI
   class XcodePhysicalDevice
+    attr_reader :device_id
+
     def initialize(device_id)
       @device_id = device_id
     end

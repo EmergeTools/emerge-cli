@@ -5,14 +5,17 @@ require 'fileutils'
 
 module EmergeCLI
   class XcodeSimulator
-    def initialize(device_id)
+    attr_reader :device_id
+
+    def initialize(device_id, environment: Environment.new)
       @device_id = device_id
+      @environment = environment
     end
 
     def boot
       Logger.info "Booting simulator #{@device_id}..."
-      result = system("xcrun simctl boot #{@device_id}")
-      raise 'Failed to boot simulator' unless result
+      output = @environment.execute_command("xcrun simctl boot #{@device_id}")
+      raise 'Failed to boot simulator' if output.include?('error') || output.include?('failed')
     end
 
     def install_app(ipa_path)

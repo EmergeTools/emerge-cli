@@ -11,6 +11,10 @@ module EmergeCLI
       ANY = :any
     end
 
+    def initialize(environment: Environment.new)
+      @environment = environment
+    end
+
     class << self
       def get_supported_platforms(ipa_path)
         return [] unless ipa_path&.end_with?('.ipa')
@@ -37,28 +41,17 @@ module EmergeCLI
     end
 
     def find_device_by_id(device_id)
-      # Quick check based on device ID format
-      expected_type = device_id.start_with?('00') ? DeviceType::PHYSICAL : DeviceType::SIMULATOR
-      Logger.debug "Device ID #{device_id} suggests a #{expected_type} device"
+      Logger.debug "Looking for device with ID: #{device_id}"
+      devices_json = execute_command('xcrun simctl list devices --json')
+      devices_data = JSON.parse(devices_json)
 
-      if expected_type == DeviceType::PHYSICAL
-        output = `xcrun devicectl list devices 2>/dev/null`
-        return XcodePhysicalDevice.new(device_id) if output.include?(device_id)
-      else
-        output = `xcrun simctl list devices 2>/dev/null`
-        return XcodeSimulator.new(device_id) if output.include?(device_id)
-      end
+      found_device = devices_data.find { |device| device['identifier'] == device_id }
+      raise "No device found with ID: #{device_id}" unless found_device
 
-      # If not found, try the other type as fallback
-      if expected_type == DeviceType::PHYSICAL
-        output = `xcrun simctl list devices 2>/dev/null`
-        return XcodeSimulator.new(device_id) if output.include?(device_id)
-      else
-        output = `xcrun devicectl list devices 2>/dev/null`
-        return XcodePhysicalDevice.new(device_id) if output.include?(device_id)
-      end
-
-      raise "No device found with ID: #{device_id}"
+      Logger.info "✅ Found device: #{found_device['name']} (#{found_device['identifier']}, #{found_device['simulator'] ? 'simulator' : 'physical'})"
+      found_device['simulator'] ?
+        XcodeSimulator.new(found_device['identifier']) :
+        XcodePhysicalDevice.new(found_device['identifier'])
     end
 
     def find_device_by_type(device_type, ipa_path)
@@ -93,9 +86,13 @@ module EmergeCLI
 
     private
 
+    def execute_command(command)
+      @environment.execute_command(command)
+    end
+
     def find_connected_device
       Logger.info 'Finding connected device...'
-      devices_json = `xcrun xcdevice list`
+      devices_json = execute_command('xcrun xcdevice list')
       Logger.debug "Device list output: #{devices_json}"
 
       devices_data = JSON.parse(devices_json)
@@ -121,7 +118,7 @@ module EmergeCLI
 
     def find_and_boot_most_recently_used_simulator
       Logger.info 'Finding and booting most recently used simulator...'
-      simulators_json = `xcrun simctl list devices --json`
+      simulators_json = execute_command('xcrun simctl list devices --json')
       Logger.debug "Simulators JSON: #{simulators_json}"
 
       simulators_data = JSON.parse(simulators_json)
@@ -149,7 +146,7 @@ module EmergeCLI
       last_booted_str = last_booted == Time.at(0) ? 'never' : last_booted.strftime('%Y-%m-%d %H:%M:%S')
       Logger.info "Found simulator #{simulator_id}#{version_str} (#{simulator_state}, last booted: #{last_booted_str})"
 
-      simulator = XcodeSimulator.new(simulator_id)
+      simulator = XcodeSimulator.new(simulator_id, environment: @environment)
       simulator.boot unless simulator_state == 'Booted'
       simulator
     end
