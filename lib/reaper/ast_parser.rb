@@ -29,6 +29,29 @@ module EmergeCLI
 
       attr_reader :parser, :language
 
+      @parser_paths_cache = {}
+
+      class << self
+        def find_parser_path(language, platform, arch)
+          cache_key = "#{language}-#{platform}-#{arch}"
+          return @parser_paths_cache[cache_key] if @parser_paths_cache.key?(cache_key)
+
+          extension = platform == 'darwin' ? 'dylib' : 'so'
+          parser_file = "libtree-sitter-#{language}-#{platform}-#{arch}.#{extension}"
+
+          parser_paths = [
+            File.join(File.dirname(__FILE__), '..', '..', 'parsers', parser_file),  # Relative to this file
+            File.join(Gem::Specification.find_by_name('emerge').gem_dir, 'parsers', parser_file)  # Installed gem path
+          ]
+
+          parser_path = parser_paths.find { |path| File.exist?(path) }
+          raise "No language grammar found for #{language}. Searched in: #{parser_paths.join(', ')}" unless parser_path
+
+          @parser_paths_cache[cache_key] = parser_path
+          parser_path
+        end
+      end
+
       def initialize(language)
         @parser = TreeSitter::Parser.new
         @language = language
@@ -52,11 +75,7 @@ module EmergeCLI
                  raise "Unsupported architecture: #{RUBY_PLATFORM}"
                end
 
-        extension = platform == 'darwin' ? 'dylib' : 'so'
-        parser_file = "libtree-sitter-#{language}-#{platform}-#{arch}.#{extension}"
-        parser_path = File.join('parsers', parser_file)
-        raise "No language grammar found for #{language}" unless File.exist?(parser_path)
-
+        parser_path = self.class.find_parser_path(language, platform, arch)
         @parser.language = TreeSitter::Language.load(language, parser_path)
       end
 
