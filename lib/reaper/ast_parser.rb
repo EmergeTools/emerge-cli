@@ -40,8 +40,8 @@ module EmergeCLI
           parser_file = "libtree-sitter-#{language}-#{platform}-#{arch}.#{extension}"
 
           parser_paths = [
-            File.join(File.dirname(__FILE__), '..', '..', 'parsers', parser_file),  # Relative to this file
-            File.join(Gem::Specification.find_by_name('emerge').gem_dir, 'parsers', parser_file)  # Installed gem path
+            File.join(File.dirname(__FILE__), '..', '..', 'parsers', parser_file), # Relative to this file
+            File.join(Gem::Specification.find_by_name('emerge').gem_dir, 'parsers', parser_file) # Installed gem path
           ]
 
           parser_path = parser_paths.find { |path| File.exist?(path) }
