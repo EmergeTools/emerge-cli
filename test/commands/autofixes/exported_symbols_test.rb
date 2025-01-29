@@ -11,7 +11,7 @@ module EmergeCLI
 __mh_execute_header).freeze
 
         def setup
-          @command = EmergeCLI::Commands::Autofixes::ExportedSymbols.new
+          @command = EmergeCLI::Commands::Fix::ExportedSymbols.new
 
           FileUtils.mkdir_p('tmp/test_autofix_exported_symbols')
           FileUtils.cp_r('test/test_files/ExampleApp.xcodeproj',

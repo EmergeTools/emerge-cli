@@ -10,7 +10,7 @@ module EmergeCLI
         STRINGS_FILE_OUTPUT_ENCODING_VALUE = 'UTF-8'.freeze
 
         def setup
-          @command = EmergeCLI::Commands::Autofixes::MinifyStrings.new
+          @command = EmergeCLI::Commands::Fix::MinifyStrings.new
 
           FileUtils.mkdir_p('tmp/test_autofix_strings')
           FileUtils.cp_r('test/test_files/ExampleApp.xcodeproj', 'tmp/test_autofix_strings/ExampleApp.xcodeproj')
