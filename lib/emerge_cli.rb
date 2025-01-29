@@ -15,7 +15,6 @@ require_relative 'commands/order_files/validate_xcode_project'
 require_relative 'commands/reaper/reaper'
 require_relative 'commands/snapshots/validate_app'
 require_relative 'commands/upload/build'
-require_relative 'commands/upload/snapshots'
 require_relative 'commands/upload/snapshots/snapshots'
 require_relative 'commands/upload/snapshots/client_libraries/swift_snapshot_testing'
 require_relative 'commands/upload/snapshots/client_libraries/paparazzi'
@@ -72,12 +71,12 @@ module EmergeCLI
   register 'reaper', Commands::Reaper
 
   register 'upload', aliases: ['u'] do |prefix|
-    prefix.register 'build', Commands::Build::Upload
-    prefix.register 'snapshots', Commands::Snapshots::Upload
+    prefix.register 'build', Commands::Upload::Build
+    prefix.register 'snapshots', Commands::Upload::Snapshots
   end
 
   register 'validate' do |prefix|
-    prefix.register 'build-distribution', Commands::Build::Distribution::Validate
+    prefix.register 'build-distribution', Commands::Build::Distribution::ValidateApp
     prefix.register 'order-files-linkmaps', Commands::OrderFiles::ValidateLinkmaps
     prefix.register 'order-files-xcode-project', Commands::OrderFiles::ValidateXcodeProject
     prefix.register 'snapshots-app-ios', Commands::Snapshots::ValidateApp
