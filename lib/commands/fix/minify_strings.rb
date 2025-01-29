@@ -3,7 +3,7 @@ require 'xcodeproj'
 
 module EmergeCLI
   module Commands
-    module Autofixes
+    module Fix
       class MinifyStrings < EmergeCLI::Commands::GlobalOptions
         desc 'Minify strings in the app'
 

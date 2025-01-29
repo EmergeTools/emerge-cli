@@ -3,7 +3,7 @@ require 'xcodeproj'
 
 module EmergeCLI
   module Commands
-    module Autofixes
+    module Fix
       class ExportedSymbols < EmergeCLI::Commands::GlobalOptions
         desc 'Remove exported symbols from built binaries'
 
