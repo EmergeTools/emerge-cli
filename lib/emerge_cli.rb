@@ -16,7 +16,7 @@ require_relative 'commands/reaper/reaper'
 require_relative 'commands/snapshots/validate_app'
 require_relative 'commands/upload/build'
 require_relative 'commands/upload/snapshots'
-require_relative 'commands/upload/snapshots/upload'
+require_relative 'commands/upload/snapshots/snapshots'
 require_relative 'commands/upload/snapshots/client_libraries/swift_snapshot_testing'
 require_relative 'commands/upload/snapshots/client_libraries/paparazzi'
 require_relative 'commands/upload/snapshots/client_libraries/roborazzi'
@@ -45,14 +45,13 @@ require 'dry/cli'
 module EmergeCLI
   extend Dry::CLI::Registry
 
-  register 'build' do |prefix|
-    prefix.register 'install', Commands::Build::Distribution::Install
-    prefix.register 'validate', Commands::Build::Distribution::Validate
-  end
-
   register 'configure' do |prefix|
     prefix.register 'snapshots-ios', Commands::Config::SnapshotsIOS
     prefix.register 'order-files-ios', Commands::Config::OrderFilesIOS
+  end
+
+  register 'download' do |prefix|
+    prefix.register 'order-files', Commands::OrderFiles::Download
   end
 
   register 'fix' do |prefix|
@@ -65,22 +64,23 @@ module EmergeCLI
     prefix.register 'fastlane-ios', Commands::Integrate::Fastlane, aliases: ['i']
   end
 
-  register 'order-files' do |prefix|
-    prefix.register 'download', Commands::OrderFiles::Download
-    prefix.register 'validate-linkmaps', Commands::OrderFiles::ValidateLinkmaps
-    prefix.register 'validate-xcode-project', Commands::OrderFiles::ValidateXcodeProject
+  register 'install' do |prefix|
+    prefix.register 'build', Commands::Build::Distribution::Install
   end
 
+  # TODO: make this command action oriented
   register 'reaper', Commands::Reaper
 
-  register 'snapshots', aliases: ['s'] do |prefix|
-    prefix.register 'validate-app-ios', Commands::Snapshots::ValidateApp
-  end
-
-  # Deprecated, for backwards compatibility
   register 'upload', aliases: ['u'] do |prefix|
     prefix.register 'build', Commands::Build::Upload
     prefix.register 'snapshots', Commands::Snapshots::Upload
+  end
+
+  register 'validate' do |prefix|
+    prefix.register 'build-distribution', Commands::Build::Distribution::Validate
+    prefix.register 'order-files-linkmaps', Commands::OrderFiles::ValidateLinkmaps
+    prefix.register 'order-files-xcode-project', Commands::OrderFiles::ValidateXcodeProject
+    prefix.register 'snapshots-app-ios', Commands::Snapshots::ValidateApp
   end
 end
 
