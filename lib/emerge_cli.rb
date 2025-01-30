@@ -1,25 +1,25 @@
 require_relative 'version'
 
 require_relative 'commands/global_options'
+require_relative 'commands/build/distribution/validate'
+require_relative 'commands/build/distribution/install'
+require_relative 'commands/config/snapshots/snapshots_ios'
+require_relative 'commands/config/orderfiles/orderfiles_ios'
+require_relative 'commands/integrate/fastlane'
+require_relative 'commands/fix/minify_strings'
+require_relative 'commands/fix/strip_binary_symbols'
+require_relative 'commands/fix/exported_symbols'
+require_relative 'commands/order_files/download_order_files'
+require_relative 'commands/order_files/validate_linkmaps'
+require_relative 'commands/order_files/validate_xcode_project'
+require_relative 'commands/reaper/reaper'
+require_relative 'commands/snapshots/validate_app'
+require_relative 'commands/upload/build'
 require_relative 'commands/upload/snapshots/snapshots'
 require_relative 'commands/upload/snapshots/client_libraries/swift_snapshot_testing'
 require_relative 'commands/upload/snapshots/client_libraries/paparazzi'
 require_relative 'commands/upload/snapshots/client_libraries/roborazzi'
 require_relative 'commands/upload/snapshots/client_libraries/default'
-require_relative 'commands/integrate/fastlane'
-require_relative 'commands/config/snapshots/snapshots_ios'
-require_relative 'commands/config/orderfiles/orderfiles_ios'
-require_relative 'commands/reaper/reaper'
-require_relative 'commands/snapshots/validate_app'
-require_relative 'commands/order_files/download_order_files'
-require_relative 'commands/order_files/validate_linkmaps'
-require_relative 'commands/order_files/validate_xcode_project'
-require_relative 'commands/upload/build'
-require_relative 'commands/build_distribution/validate_app'
-require_relative 'commands/build_distribution/download_and_install'
-require_relative 'commands/autofixes/minify_strings'
-require_relative 'commands/autofixes/strip_binary_symbols'
-require_relative 'commands/autofixes/exported_symbols'
 
 require_relative 'reaper/ast_parser'
 require_relative 'reaper/code_deleter'
@@ -44,41 +44,42 @@ require 'dry/cli'
 module EmergeCLI
   extend Dry::CLI::Registry
 
-  register 'upload', aliases: ['u'] do |prefix|
-    prefix.register 'build', Commands::Upload::Build
-    prefix.register 'snapshots', Commands::Upload::Snapshots
+  register 'configure' do |prefix|
+    prefix.register 'snapshots-ios', Commands::Config::SnapshotsIOS
+    prefix.register 'order-files-ios', Commands::Config::OrderFilesIOS
+  end
+
+  register 'download' do |prefix|
+    prefix.register 'order-files', Commands::OrderFiles::Download
+  end
+
+  register 'fix' do |prefix|
+    prefix.register 'minify-strings', Commands::Fix::MinifyStrings
+    prefix.register 'strip-binary-symbols', Commands::Fix::StripBinarySymbols
+    prefix.register 'exported-symbols', Commands::Fix::ExportedSymbols
   end
 
   register 'integrate' do |prefix|
     prefix.register 'fastlane-ios', Commands::Integrate::Fastlane, aliases: ['i']
   end
 
-  register 'configure' do |prefix|
-    prefix.register 'snapshots-ios', Commands::Config::SnapshotsIOS
-    prefix.register 'order-files-ios', Commands::Config::OrderFilesIOS
+  register 'install' do |prefix|
+    prefix.register 'build', Commands::Build::Distribution::Install
   end
 
+  # TODO: make this command action oriented
   register 'reaper', Commands::Reaper
 
-  register 'snapshots' do |prefix|
-    prefix.register 'validate-app-ios', Commands::Snapshots::ValidateApp
+  register 'upload', aliases: ['u'] do |prefix|
+    prefix.register 'build', Commands::Upload::Build
+    prefix.register 'snapshots', Commands::Upload::Snapshots
   end
 
-  register 'order-files' do |prefix|
-    prefix.register 'download', Commands::DownloadOrderFiles
-    prefix.register 'validate-linkmaps', Commands::ValidateLinkmaps
-    prefix.register 'validate-xcode-project', Commands::ValidateXcodeProject
-  end
-
-  register 'build-distribution' do |prefix|
-    prefix.register 'validate-app', Commands::BuildDistribution::ValidateApp
-    prefix.register 'install', Commands::BuildDistribution::DownloadAndInstall
-  end
-
-  register 'autofix' do |prefix|
-    prefix.register 'minify-strings', Commands::Autofixes::MinifyStrings
-    prefix.register 'strip-binary-symbols', Commands::Autofixes::StripBinarySymbols
-    prefix.register 'exported-symbols', Commands::Autofixes::ExportedSymbols
+  register 'validate' do |prefix|
+    prefix.register 'build-distribution', Commands::Build::Distribution::ValidateApp
+    prefix.register 'order-files-linkmaps', Commands::OrderFiles::ValidateLinkmaps
+    prefix.register 'order-files-xcode-project', Commands::OrderFiles::ValidateXcodeProject
+    prefix.register 'snapshots-app-ios', Commands::Snapshots::ValidateApp
   end
 end
 

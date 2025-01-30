@@ -12,7 +12,7 @@ module EmergeCLI
         @network = FakeNetwork.new(
           '/com.emerge.hn.Hacker-News/3.4.0' => File.read('test/test_files/com.emerge.hn.Hacker-News-3.4.0.gz')
         )
-        @download_order_files = DownloadOrderFiles.new(network: @network)
+        @download_order_files = OrderFiles::Download.new(network: @network)
 
         options = {
           bundle_id: 'com.emerge.hn.Hacker-News',

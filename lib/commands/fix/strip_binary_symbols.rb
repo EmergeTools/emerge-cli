@@ -3,7 +3,7 @@ require 'xcodeproj'
 
 module EmergeCLI
   module Commands
-    module Autofixes
+    module Fix
       class StripBinarySymbols < EmergeCLI::Commands::GlobalOptions
         desc 'Strip binary symbols from the app'
 

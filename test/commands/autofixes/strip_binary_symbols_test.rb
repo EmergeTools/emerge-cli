@@ -10,7 +10,7 @@ module EmergeCLI
                      'Contents/Resources/DWARF/${EXECUTABLE_NAME}'.freeze
 
         def setup
-          @command = EmergeCLI::Commands::Autofixes::StripBinarySymbols.new
+          @command = EmergeCLI::Commands::Fix::StripBinarySymbols.new
 
           FileUtils.mkdir_p('tmp/test_autofix_strip_binary_symbols')
           FileUtils.cp_r('test/test_files/ExampleApp.xcodeproj',
