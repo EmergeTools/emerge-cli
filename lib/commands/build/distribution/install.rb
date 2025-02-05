@@ -50,12 +50,29 @@ module EmergeCLI
 
                 extension = platform == 'ios' ? 'ipa' : 'apk'
                 output_name = @options[:output] || "#{@options[:build_id]}.#{extension}"
-                
+
                 if File.exist?(output_name)
-                  Logger.info "Build file already exists at #{output_name}, skipping download"
+                  Logger.info "Build file already exists at #{output_name}"
+                  print 'Do you want to (i)nstall existing file, (o)verwrite with new download, or (c)ancel? [i/o/c]: '
+                  choice = STDIN.gets.chomp.downcase
+
+                  case choice
+                  when 'i'
+                    Logger.info 'Proceeding with existing file...'
+                  when 'o'
+                    Logger.info 'Downloading new build...'
+                    `curl --progress-bar -L '#{download_url}' -o #{output_name}`
+                    Logger.info "✅ Build downloaded to #{output_name}"
+                  when 'c'
+                    Logger.info 'Operation cancelled'
+                    exit(0)
+                  else
+                    Logger.error 'Invalid choice'
+                    exit(1)
+                  end
                 else
                   Logger.info 'Downloading build...'
-                  `curl --progress-bar -L '#{download_url}' -o #{output_name} `
+                  `curl --progress-bar -L '#{download_url}' -o #{output_name}`
                   Logger.info "✅ Build downloaded to #{output_name}"
                 end
               rescue StandardError => e
