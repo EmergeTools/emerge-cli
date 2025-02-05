@@ -34,3 +34,7 @@ Gemfile.lock
 
 # DS_Store
 .DS_Store
+
+# Ignore build files downloaded for testing
+*.apk
+*.ipa

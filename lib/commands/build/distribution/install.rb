@@ -151,11 +151,33 @@ module EmergeCLI
           end
 
           def install_android_build(build_path)
-            command = "adb -s #{@options[:device_id]} install #{build_path}"
+            device_id = @options[:device_id] || select_android_device
+            raise 'No Android devices found' unless device_id
+
+            command = "adb -s #{device_id} install #{build_path}"
             Logger.debug "Running command: #{command}"
             `#{command}`
 
             Logger.info '✅ Build installed'
+          end
+
+          def select_android_device
+            devices = get_android_devices
+            return nil if devices.empty?
+            return devices.first if devices.length == 1
+
+            prompt = TTY::Prompt.new
+            Logger.info 'Multiple Android devices found.'
+            prompt.select('Choose a device:', devices)
+          end
+
+          def get_android_devices
+            output = `adb devices`
+            # Split output into lines, remove first line (header), and extract device IDs
+            output.split("\n")[1..]
+                  .map(&:strip)
+                  .reject(&:empty?)
+                  .map { |line| line.split("\t").first }
           end
         end
       end
