@@ -49,10 +49,15 @@ module EmergeCLI
                 app_id = response['appId']
 
                 extension = platform == 'ios' ? 'ipa' : 'apk'
-                Logger.info 'Downloading build...'
                 output_name = @options[:output] || "#{@options[:build_id]}.#{extension}"
-                `curl --progress-bar -L '#{download_url}' -o #{output_name} `
-                Logger.info "✅ Build downloaded to #{output_name}"
+                
+                if File.exist?(output_name)
+                  Logger.info "Build file already exists at #{output_name}, skipping download"
+                else
+                  Logger.info 'Downloading build...'
+                  `curl --progress-bar -L '#{download_url}' -o #{output_name} `
+                  Logger.info "✅ Build downloaded to #{output_name}"
+                end
               rescue StandardError => e
                 Logger.error "❌ Failed to download build: #{e.message}"
                 raise e
