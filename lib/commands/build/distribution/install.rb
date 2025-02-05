@@ -3,6 +3,7 @@ require 'cfpropertylist'
 require 'zip'
 require 'rbconfig'
 require 'tmpdir'
+require 'tty-prompt'
 
 module EmergeCLI
   module Commands
@@ -143,16 +144,9 @@ module EmergeCLI
             return nil if devices.empty?
             return devices.first if devices.length == 1
 
-            Logger.info 'Multiple Android devices found. Please select one:'
-            devices.each_with_index do |device, index|
-              Logger.info "#{index + 1}. #{device}"
-            end
-
-            print 'Enter device number: '
-            selection = STDIN.gets.chomp.to_i
-            return devices[selection - 1] if selection.between?(1, devices.length)
-
-            raise 'Invalid device selection'
+            prompt = TTY::Prompt.new
+            Logger.info 'Multiple Android devices found.'
+            prompt.select('Choose a device:', devices)
           end
 
           def get_android_devices
