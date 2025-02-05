@@ -198,7 +198,7 @@ module EmergeCLI
           image_metadata = {
             manifestVersion: 1,
             images: {},
-            errors: [],
+            errors: []
           }
 
           # Process image metadata concurrently
