@@ -6,6 +6,8 @@ require 'async'
 require 'async/barrier'
 require 'async/semaphore'
 require 'async/http/internet/instance'
+require 'zip'
+require 'tempfile'
 
 module EmergeCLI
   module Commands
@@ -33,6 +35,8 @@ module EmergeCLI
 
         option :profile, type: :boolean, default: false, desc: 'Enable performance profiling metrics'
 
+        option :batch, type: :boolean, default: false, desc: 'Upload images in batch using zip file'
+
         argument :image_paths, type: :array, required: false, desc: 'Paths to folders containing images'
 
         def initialize(network: nil, git_info_provider: nil)
@@ -54,7 +58,7 @@ module EmergeCLI
             api_token = @options[:api_token] || ENV.fetch('EMERGE_API_TOKEN', nil)
             raise 'API token is required and cannot be blank' if api_token.nil? || api_token.strip.empty?
 
-            @network ||= EmergeCLI::Network.new(api_token:)
+            @network ||= EmergeCLI::Network.new(api_token:, base_url: 'fcdvgi1br2.execute-api.us-west-1.amazonaws.com')
             @git_info_provider ||= GitInfoProvider.new
 
             Sync do
@@ -178,6 +182,90 @@ module EmergeCLI
         def upload_images(run_id, concurrency, image_files, client)
           Logger.info 'Uploading images...'
 
+          if @options[:batch]
+            batch_upload_images(run_id, image_files, client)
+          else
+            individual_upload_images(run_id, concurrency, image_files, client)
+          end
+        end
+
+        def batch_upload_images(run_id, image_files, client)
+          Logger.info 'Preparing batch upload...'
+
+          metadata_barrier = Async::Barrier.new
+          metadata_semaphore = Async::Semaphore.new(10, parent: metadata_barrier) # Process 10 files concurrently
+
+          image_metadata = {}
+
+          # Process image metadata concurrently
+          @profiler.measure('process_image_metadata') do
+            image_files.each do |image_path|
+              metadata_semaphore.async do
+                file_info = client.parse_file_info(image_path)
+
+                dimensions = @profiler.measure('chunky_png_processing') do
+                  datastream = ChunkyPNG::Datastream.from_file(image_path)
+                  {
+                    width: datastream.header_chunk.width,
+                    height: datastream.header_chunk.height
+                  }
+                end
+
+                metadata = {
+                  fileName: file_info[:file_name],
+                  groupName: file_info[:group_name],
+                  variantName: file_info[:variant_name],
+                  width: dimensions[:width],
+                  height: dimensions[:height]
+                }
+
+                image_name = File.basename(image_path)
+                # Store metadata and image path for zip creation
+                image_metadata[image_name] = {
+                  metadata: metadata,
+                  path: image_path
+                }
+              end
+            end
+
+            metadata_barrier.wait
+          end
+
+          # Create zip file with processed metadata
+          Tempfile.create(['snapshot_batch', '.zip']) do |zip_file|
+            @profiler.measure('create_zip_file') do
+              Zip::File.open(zip_file.path, Zip::File::CREATE) do |zipfile|
+                image_metadata.each do |image_name, data|
+                  metadata_name = "#{image_name}.json"
+
+                  @profiler.measure('add_to_zip') do
+                    zipfile.add(image_name, data[:path])
+                    zipfile.get_output_stream(metadata_name) { |f| f.write(JSON.generate(data[:metadata])) }
+                  end
+                end
+              end
+            end
+
+            # upload_url = @profiler.measure('create_batch_upload_url') do
+            #   response = @network.post(path: '/v1/snapshots/run/batch-image', body: { run_id: run_id })
+            #   JSON.parse(response.read).fetch('zip_url')
+            # end
+
+            # Logger.info 'Uploading images...'
+            # Logger.debug "Uploading batch zip file to #{upload_url}"
+            # @profiler.measure('upload_batch_zip') do
+            #   @network.put(
+            #     path: upload_url,
+            #     headers: { 'Content-Type' => 'application/zip' },
+            #     body: File.read(zip_file.path)
+            #   )
+            # end
+          end
+        ensure
+          metadata_barrier&.stop
+        end
+
+        def individual_upload_images(run_id, concurrency, image_files, client)
           post_image_barrier = Async::Barrier.new
           post_image_semaphore = Async::Semaphore.new(concurrency, parent: post_image_barrier)
 
