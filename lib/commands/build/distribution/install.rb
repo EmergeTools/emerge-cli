@@ -3,6 +3,7 @@ require 'cfpropertylist'
 require 'zip'
 require 'rbconfig'
 require 'tmpdir'
+require 'tty-prompt'
 
 module EmergeCLI
   module Commands
@@ -53,22 +54,22 @@ module EmergeCLI
 
                 if File.exist?(output_name)
                   Logger.info "Build file already exists at #{output_name}"
-                  print 'Do you want to (i)nstall existing file, (o)verwrite with new download, or (c)ancel? [i/o/c]: '
-                  choice = STDIN.gets.chomp.downcase
+                  prompt = TTY::Prompt.new
+                  choice = prompt.select('What would you like to do?', {
+                                           'Install existing file' => :install,
+                                           'Overwrite with new download' => :overwrite,
+                                           'Cancel' => :cancel
+                                         })
 
                   case choice
-                  when 'i'
+                  when :install
                     Logger.info 'Proceeding with existing file...'
-                  when 'o'
+                  when :overwrite
                     Logger.info 'Downloading new build...'
                     `curl --progress-bar -L '#{download_url}' -o #{output_name}`
                     Logger.info "✅ Build downloaded to #{output_name}"
-                  when 'c'
-                    Logger.info 'Operation cancelled'
-                    exit(0)
-                  else
-                    Logger.error 'Invalid choice'
-                    exit(1)
+                  when :cancel
+                    raise 'Operation cancelled by user'
                   end
                 else
                   Logger.info 'Downloading build...'
