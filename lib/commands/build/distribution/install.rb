@@ -3,6 +3,7 @@ require 'cfpropertylist'
 require 'zip'
 require 'rbconfig'
 require 'tmpdir'
+require 'tty-prompt'
 
 module EmergeCLI
   module Commands
@@ -49,10 +50,32 @@ module EmergeCLI
                 app_id = response['appId']
 
                 extension = platform == 'ios' ? 'ipa' : 'apk'
-                Logger.info 'Downloading build...'
                 output_name = @options[:output] || "#{@options[:build_id]}.#{extension}"
-                `curl --progress-bar -L '#{download_url}' -o #{output_name} `
-                Logger.info "✅ Build downloaded to #{output_name}"
+
+                if File.exist?(output_name)
+                  Logger.info "Build file already exists at #{output_name}"
+                  prompt = TTY::Prompt.new
+                  choice = prompt.select('What would you like to do?', {
+                                           'Install existing file' => :install,
+                                           'Overwrite with new download' => :overwrite,
+                                           'Cancel' => :cancel
+                                         })
+
+                  case choice
+                  when :install
+                    Logger.info 'Proceeding with existing file...'
+                  when :overwrite
+                    Logger.info 'Downloading new build...'
+                    `curl --progress-bar -L '#{download_url}' -o #{output_name}`
+                    Logger.info "✅ Build downloaded to #{output_name}"
+                  when :cancel
+                    raise 'Operation cancelled by user'
+                  end
+                else
+                  Logger.info 'Downloading build...'
+                  `curl --progress-bar -L '#{download_url}' -o #{output_name}`
+                  Logger.info "✅ Build downloaded to #{output_name}"
+                end
               rescue StandardError => e
                 Logger.error "❌ Failed to download build: #{e.message}"
                 raise e
