@@ -158,11 +158,10 @@ module EmergeCLI
           def get_android_devices
             output = `adb devices`
             # Split output into lines, remove first line (header), and extract device IDs
-            devices = output.split("\n")[1..]
-                          .map(&:strip)
-                          .reject(&:empty?)
-                          .map { |line| line.split("\t").first }
-            devices
+            output.split("\n")[1..]
+                  .map(&:strip)
+                  .reject(&:empty?)
+                  .map { |line| line.split("\t").first }
           end
         end
       end
