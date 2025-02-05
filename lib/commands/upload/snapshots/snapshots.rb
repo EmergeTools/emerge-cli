@@ -195,7 +195,11 @@ module EmergeCLI
           metadata_barrier = Async::Barrier.new
           metadata_semaphore = Async::Semaphore.new(10, parent: metadata_barrier) # Process 10 files concurrently
 
-          image_metadata = {}
+          image_metadata = {
+            manifestVersion: 1,
+            images: {},
+            errors: [],
+          }
 
           # Process image metadata concurrently
           @profiler.measure('process_image_metadata') do
@@ -214,52 +218,48 @@ module EmergeCLI
                 metadata = {
                   fileName: file_info[:file_name],
                   groupName: file_info[:group_name],
-                  variantName: file_info[:variant_name],
+                  displayName: file_info[:variant_name],
                   width: dimensions[:width],
                   height: dimensions[:height]
                 }
 
-                image_name = File.basename(image_path)
-                # Store metadata and image path for zip creation
-                image_metadata[image_name] = {
-                  metadata: metadata,
-                  path: image_path
-                }
+                image_name = File.basename(image_path, '.*')
+                image_metadata[:images][image_name] = metadata
               end
             end
 
             metadata_barrier.wait
           end
 
-          # Create zip file with processed metadata
+          # Create zip file with processed metadata and images
           Tempfile.create(['snapshot_batch', '.zip']) do |zip_file|
             @profiler.measure('create_zip_file') do
               Zip::File.open(zip_file.path, Zip::File::CREATE) do |zipfile|
-                image_metadata.each do |image_name, data|
-                  metadata_name = "#{image_name}.json"
+                # Add manifest.json
+                zipfile.get_output_stream('manifest.json') { |f| f.write(JSON.generate(image_metadata)) }
 
-                  @profiler.measure('add_to_zip') do
-                    zipfile.add(image_name, data[:path])
-                    zipfile.get_output_stream(metadata_name) { |f| f.write(JSON.generate(data[:metadata])) }
-                  end
+                # Add all image files
+                image_files.each do |image_path|
+                  image_name = File.basename(image_path)
+                  zipfile.add(image_name, image_path)
                 end
               end
             end
 
-            # upload_url = @profiler.measure('create_batch_upload_url') do
-            #   response = @network.post(path: '/v1/snapshots/run/batch-image', body: { run_id: run_id })
-            #   JSON.parse(response.read).fetch('zip_url')
-            # end
+            upload_url = @profiler.measure('create_batch_upload_url') do
+              response = @network.post(path: '/v1/snapshots/run/batch-image', body: { run_id: run_id })
+              JSON.parse(response.read).fetch('zip_url')
+            end
 
-            # Logger.info 'Uploading images...'
-            # Logger.debug "Uploading batch zip file to #{upload_url}"
-            # @profiler.measure('upload_batch_zip') do
-            #   @network.put(
-            #     path: upload_url,
-            #     headers: { 'Content-Type' => 'application/zip' },
-            #     body: File.read(zip_file.path)
-            #   )
-            # end
+            Logger.info 'Uploading images...'
+            Logger.debug "Uploading batch zip file to #{upload_url}"
+            @profiler.measure('upload_batch_zip') do
+              @network.put(
+                path: upload_url,
+                headers: { 'Content-Type' => 'application/zip' },
+                body: File.read(zip_file.path)
+              )
+            end
           end
         ensure
           metadata_barrier&.stop
