@@ -201,6 +201,9 @@ module EmergeCLI
             errors: []
           }
 
+          used_filenames = {}
+          duplicate_files = {}
+
           @profiler.measure('process_image_metadata') do
             image_files.each do |image_path|
               metadata_semaphore.async do
@@ -236,8 +239,16 @@ module EmergeCLI
                 zipfile.get_output_stream('manifest.json') { |f| f.write(JSON.generate(image_metadata)) }
 
                 image_files.each do |image_path|
-                  image_name = File.basename(image_path)
-                  zipfile.add(image_name, image_path)
+                  filename = File.basename(image_path)
+                  # Be careful not to add duplicates to the zip file since it will crash
+                  # This is undefined behavior so alert the user they need to make their images unique
+                  if used_filenames[filename]
+                    duplicate_files[filename] ||= []
+                    duplicate_files[filename] << image_path
+                  else
+                    used_filenames[filename] = image_path
+                    zipfile.add(filename, image_path)
+                  end
                 end
               end
             end
@@ -256,6 +267,10 @@ module EmergeCLI
                 body: File.read(zip_file.path)
               )
             end
+          end
+
+          duplicate_files.each do |filename, paths|
+            Logger.warn "Found #{paths.length} duplicate(s) of '#{filename}'. Duplicates: #{paths.join(', ')}"
           end
         ensure
           metadata_barrier&.stop
