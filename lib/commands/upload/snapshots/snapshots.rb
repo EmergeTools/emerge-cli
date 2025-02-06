@@ -68,7 +68,7 @@ module EmergeCLI
 
               image_files = @profiler.measure('find_image_files') { find_image_files(client) }
 
-              seen_files, duplicate_files = check_duplicate_files(image_files, client)
+              check_duplicate_files(image_files, client)
 
               run_id = @profiler.measure('create_run') { create_run }
 
@@ -130,7 +130,7 @@ module EmergeCLI
           found_images
         end
 
-        def check_duplicate_files(image_files, client)
+        def check_duplicate_files(image_files, _client)
           seen_files = {}
           duplicate_files = {}
 
@@ -209,7 +209,7 @@ module EmergeCLI
             errors: []
           }
 
-          used_filenames, _ = check_duplicate_files(image_files, client)
+          used_filenames, = check_duplicate_files(image_files, client)
 
           @profiler.measure('process_image_metadata') do
             image_files.each do |image_path|
@@ -248,9 +248,7 @@ module EmergeCLI
                 image_files.each do |image_path|
                   filename = File.basename(image_path)
                   # Only add files we haven't seen before
-                  if used_filenames[filename] == image_path
-                    zipfile.add(filename, image_path)
-                  end
+                  zipfile.add(filename, image_path) if used_filenames[filename] == image_path
                 end
               end
             end
