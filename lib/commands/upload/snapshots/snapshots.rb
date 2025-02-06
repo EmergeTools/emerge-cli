@@ -68,7 +68,7 @@ module EmergeCLI
 
               image_files = @profiler.measure('find_image_files') { find_image_files(client) }
 
-              @profiler.measure('check_duplicate_files') { check_duplicate_files(image_files, client) }
+              check_duplicate_files(image_files, client)
 
               run_id = @profiler.measure('create_run') { create_run }
 
@@ -130,18 +130,26 @@ module EmergeCLI
           found_images
         end
 
-        def check_duplicate_files(image_files, client)
+        def check_duplicate_files(image_files, _client)
           seen_files = {}
+          duplicate_files = {}
+
           image_files.each do |image_path|
-            file_name = client.parse_file_info(image_path)[:file_name]
+            file_name = File.basename(image_path)
 
             if seen_files[file_name]
-              Logger.warn "Duplicate file name detected: '#{file_name}'. " \
-                          "Previous occurrence: '#{seen_files[file_name]}'. " \
-                          'This upload will overwrite the previous one.'
+              duplicate_files[file_name] ||= []
+              duplicate_files[file_name] << image_path
+            else
+              seen_files[file_name] = image_path
             end
-            seen_files[file_name] = image_path
           end
+
+          duplicate_files.each do |filename, paths|
+            Logger.warn "Found #{paths.length} duplicate(s) of '#{filename}'. Duplicates: #{paths.join(', ')}"
+          end
+
+          [seen_files, duplicate_files]
         end
 
         def create_run
@@ -201,6 +209,8 @@ module EmergeCLI
             errors: []
           }
 
+          used_filenames, = check_duplicate_files(image_files, client)
+
           @profiler.measure('process_image_metadata') do
             image_files.each do |image_path|
               metadata_semaphore.async do
@@ -236,8 +246,9 @@ module EmergeCLI
                 zipfile.get_output_stream('manifest.json') { |f| f.write(JSON.generate(image_metadata)) }
 
                 image_files.each do |image_path|
-                  image_name = File.basename(image_path)
-                  zipfile.add(image_name, image_path)
+                  filename = File.basename(image_path)
+                  # Only add files we haven't seen before
+                  zipfile.add(filename, image_path) if used_filenames[filename] == image_path
                 end
               end
             end
