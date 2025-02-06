@@ -193,7 +193,7 @@ module EmergeCLI
           Logger.info 'Preparing batch upload...'
 
           metadata_barrier = Async::Barrier.new
-          metadata_semaphore = Async::Semaphore.new(10, parent: metadata_barrier) # Process 10 files concurrently
+          metadata_semaphore = Async::Semaphore.new(10, parent: metadata_barrier)
 
           image_metadata = {
             manifestVersion: 1,
@@ -201,7 +201,6 @@ module EmergeCLI
             errors: []
           }
 
-          # Process image metadata concurrently
           @profiler.measure('process_image_metadata') do
             image_files.each do |image_path|
               metadata_semaphore.async do
@@ -231,14 +230,11 @@ module EmergeCLI
             metadata_barrier.wait
           end
 
-          # Create zip file with processed metadata and images
           Tempfile.create(['snapshot_batch', '.zip']) do |zip_file|
             @profiler.measure('create_zip_file') do
               Zip::File.open(zip_file.path, Zip::File::CREATE) do |zipfile|
-                # Add manifest.json
                 zipfile.get_output_stream('manifest.json') { |f| f.write(JSON.generate(image_metadata)) }
 
-                # Add all image files
                 image_files.each do |image_path|
                   image_name = File.basename(image_path)
                   zipfile.add(image_name, image_path)
