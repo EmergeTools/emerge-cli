@@ -7,7 +7,7 @@ module EmergeCLI
     class Reaper < EmergeCLI::Commands::GlobalOptions
       desc 'Analyze dead code from an Emerge upload'
 
-      option :id, type: :string, required: true, desc: 'Upload ID to analyze'
+      option :id, type: :string, required: true, desc: 'Emerge build ID to analyze'
       option :project_root, type: :string, required: true,
                             desc: 'Root directory of the project, defaults to current directory'
 
