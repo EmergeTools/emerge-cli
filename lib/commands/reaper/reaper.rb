@@ -7,7 +7,7 @@ module EmergeCLI
     class Reaper < EmergeCLI::Commands::GlobalOptions
       desc 'Analyze dead code from an Emerge upload'
 
-      option :upload_id, type: :string, required: true, desc: 'Upload ID to analyze'
+      option :id, type: :string, required: true, desc: 'Upload ID to analyze'
       option :project_root, type: :string, required: true,
                             desc: 'Root directory of the project, defaults to current directory'
 
@@ -38,7 +38,7 @@ module EmergeCLI
           project_root = @options[:project_root] || Dir.pwd
 
           Sync do
-            all_data = @profiler.measure('fetch_dead_code') { fetch_all_dead_code(@options[:upload_id]) }
+            all_data = @profiler.measure('fetch_dead_code') { fetch_all_dead_code(@options[:id]) }
             result = @profiler.measure('parse_dead_code') { DeadCodeResult.new(all_data) }
 
             Logger.info result.to_s

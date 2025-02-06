@@ -14,7 +14,7 @@ module EmergeCLI
 
           option :api_token, type: :string, required: false,
                              desc: 'API token for authentication, defaults to ENV[EMERGE_API_TOKEN]'
-          option :build_id, type: :string, required: true, desc: 'Build ID to download'
+          option :id, type: :string, required: true, desc: 'Emerge build ID to download'
           option :install, type: :boolean, default: true, required: false, desc: 'Install the build on the device'
           option :device_id, type: :string, desc: 'Specific device ID to target'
           option :device_type, type: :string, enum: %w[virtual physical any], default: 'any',
@@ -33,7 +33,7 @@ module EmergeCLI
               api_token = @options[:api_token] || ENV.fetch('EMERGE_API_TOKEN', nil)
               raise 'API token is required' unless api_token
 
-              raise 'Build ID is required' unless @options[:build_id]
+              raise 'Build ID is required' unless @options[:id]
 
               output_name = nil
               app_id = nil
@@ -42,7 +42,7 @@ module EmergeCLI
                 @network ||= EmergeCLI::Network.new(api_token:)
 
                 Logger.info 'Getting build URL...'
-                request = get_build_url(@options[:build_id])
+                request = get_build_url(@options[:id])
                 response = parse_response(request)
 
                 platform = response['platform']
@@ -50,7 +50,7 @@ module EmergeCLI
                 app_id = response['appId']
 
                 extension = platform == 'ios' ? 'ipa' : 'apk'
-                output_name = @options[:output] || "#{@options[:build_id]}.#{extension}"
+                output_name = @options[:output] || "#{@options[:id]}.#{extension}"
 
                 if File.exist?(output_name)
                   Logger.info "Build file already exists at #{output_name}"
