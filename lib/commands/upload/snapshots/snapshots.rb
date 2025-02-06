@@ -68,7 +68,7 @@ module EmergeCLI
 
               image_files = @profiler.measure('find_image_files') { find_image_files(client) }
 
-              @profiler.measure('check_duplicate_files') { check_duplicate_files(image_files, client) }
+              seen_files, duplicate_files = check_duplicate_files(image_files, client)
 
               run_id = @profiler.measure('create_run') { create_run }
 
@@ -132,16 +132,24 @@ module EmergeCLI
 
         def check_duplicate_files(image_files, client)
           seen_files = {}
+          duplicate_files = {}
+
           image_files.each do |image_path|
-            file_name = client.parse_file_info(image_path)[:file_name]
+            file_name = File.basename(image_path)
 
             if seen_files[file_name]
-              Logger.warn "Duplicate file name detected: '#{file_name}'. " \
-                          "Previous occurrence: '#{seen_files[file_name]}'. " \
-                          'This upload will overwrite the previous one.'
+              duplicate_files[file_name] ||= []
+              duplicate_files[file_name] << image_path
+            else
+              seen_files[file_name] = image_path
             end
-            seen_files[file_name] = image_path
           end
+
+          duplicate_files.each do |filename, paths|
+            Logger.warn "Found #{paths.length} duplicate(s) of '#{filename}'. Duplicates: #{paths.join(', ')}"
+          end
+
+          [seen_files, duplicate_files]
         end
 
         def create_run
@@ -201,8 +209,7 @@ module EmergeCLI
             errors: []
           }
 
-          used_filenames = {}
-          duplicate_files = {}
+          used_filenames, _ = check_duplicate_files(image_files, client)
 
           @profiler.measure('process_image_metadata') do
             image_files.each do |image_path|
@@ -240,13 +247,8 @@ module EmergeCLI
 
                 image_files.each do |image_path|
                   filename = File.basename(image_path)
-                  # Be careful not to add duplicates to the zip file since it will crash
-                  # This is undefined behavior so alert the user they need to make their images unique
-                  if used_filenames[filename]
-                    duplicate_files[filename] ||= []
-                    duplicate_files[filename] << image_path
-                  else
-                    used_filenames[filename] = image_path
+                  # Only add files we haven't seen before
+                  if used_filenames[filename] == image_path
                     zipfile.add(filename, image_path)
                   end
                 end
@@ -267,10 +269,6 @@ module EmergeCLI
                 body: File.read(zip_file.path)
               )
             end
-          end
-
-          duplicate_files.each do |filename, paths|
-            Logger.warn "Found #{paths.length} duplicate(s) of '#{filename}'. Duplicates: #{paths.join(', ')}"
           end
         ensure
           metadata_barrier&.stop
