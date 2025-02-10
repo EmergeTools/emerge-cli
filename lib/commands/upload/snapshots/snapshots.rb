@@ -249,6 +249,7 @@ module EmergeCLI
 
                 image_files.each do |image_path|
                   file_info = file_info_map[image_path]
+                  # Only add files we haven't seen before, otherwise it will crash
                   zipfile.add(file_info[:file_name], image_path) if used_filenames[file_info[:file_name]] == image_path
                 end
               end
