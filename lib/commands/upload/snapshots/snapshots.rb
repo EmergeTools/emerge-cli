@@ -210,11 +210,14 @@ module EmergeCLI
           }
 
           used_filenames, = check_duplicate_files(image_files, client)
+          file_info_map = {}
 
           @profiler.measure('process_image_metadata') do
             image_files.each do |image_path|
               metadata_semaphore.async do
                 file_info = client.parse_file_info(image_path)
+                file_name_without_extension = File.basename(file_info[:file_name], '.*')
+                file_info_map[image_path] = file_info
 
                 dimensions = @profiler.measure('chunky_png_processing') do
                   datastream = ChunkyPNG::Datastream.from_file(image_path)
@@ -225,15 +228,14 @@ module EmergeCLI
                 end
 
                 metadata = {
-                  fileName: file_info[:file_name],
+                  fileName: file_name_without_extension,
                   groupName: file_info[:group_name],
                   displayName: file_info[:variant_name],
                   width: dimensions[:width],
                   height: dimensions[:height]
                 }
 
-                image_name = File.basename(image_path, '.*')
-                image_metadata[:images][image_name] = metadata
+                image_metadata[:images][file_name_without_extension] = metadata
               end
             end
 
@@ -246,9 +248,8 @@ module EmergeCLI
                 zipfile.get_output_stream('manifest.json') { |f| f.write(JSON.generate(image_metadata)) }
 
                 image_files.each do |image_path|
-                  filename = File.basename(image_path)
-                  # Only add files we haven't seen before
-                  zipfile.add(filename, image_path) if used_filenames[filename] == image_path
+                  file_info = file_info_map[image_path]
+                  zipfile.add(file_info[:file_name], image_path) if used_filenames[file_info[:file_name]] == image_path
                 end
               end
             end
