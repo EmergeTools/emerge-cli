@@ -35,7 +35,7 @@ module EmergeCLI
 
         option :profile, type: :boolean, default: false, desc: 'Enable performance profiling metrics'
 
-        option :batch, type: :boolean, default: false, desc: 'Upload images in batch using zip file'
+        option :batch, type: :boolean, default: true, desc: 'Upload images in batch using zip file'
 
         argument :image_paths, type: :array, required: false, desc: 'Paths to folders containing images'
 
