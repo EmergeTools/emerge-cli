@@ -119,7 +119,7 @@ module EmergeCLI
               raise "Unsupported client library: #{@options[:client_library]}"
             end
           else
-            ClientLibraries::Default.new(image_paths)
+            ClientLibraries::Default.new(image_paths, @options[:group_delimiter])
           end
         end
 
