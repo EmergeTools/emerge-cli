@@ -17,7 +17,7 @@ module EmergeCLI
             file_name_without_extension = File.basename(file_name, '.*')
             parts = file_name_without_extension.split(@group_delimiter)
             group_name = parts.first
-            variant_name = parts[1..-1].join(@group_delimiter)
+            variant_name = parts[1..].join(@group_delimiter)
             {
               file_name:,
               group_name:,

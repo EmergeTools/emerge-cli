@@ -27,7 +27,8 @@ module EmergeCLI
         option :base_sha, type: :string, required: false, desc: 'Base SHA'
         option :previous_sha, type: :string, required: false, desc: 'Previous SHA'
         option :pr_number, type: :string, required: false, desc: 'PR number'
-        option :concurrency, type: :integer, default: 5, desc: 'Number of concurrency for parallel image uploads when not using batch mode'
+        option :concurrency, type: :integer, default: 5,
+                             desc: 'Number of concurrency for parallel image uploads when not using batch mode'
 
         option :client_library, type: :string, required: false, values: %w[swift-snapshot-testing paparazzi roborazzi],
                                 desc: 'Client library used for snapshots'
