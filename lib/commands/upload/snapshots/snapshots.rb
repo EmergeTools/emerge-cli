@@ -27,7 +27,8 @@ module EmergeCLI
         option :base_sha, type: :string, required: false, desc: 'Base SHA'
         option :previous_sha, type: :string, required: false, desc: 'Previous SHA'
         option :pr_number, type: :string, required: false, desc: 'PR number'
-        option :concurrency, type: :integer, default: 5, desc: 'Number of concurrency for parallel uploads'
+        option :concurrency, type: :integer, default: 5,
+                             desc: 'Number of concurrency for parallel image uploads when not using batch mode'
 
         option :client_library, type: :string, required: false, values: %w[swift-snapshot-testing paparazzi roborazzi],
                                 desc: 'Client library used for snapshots'
@@ -36,7 +37,7 @@ module EmergeCLI
         option :profile, type: :boolean, default: false, desc: 'Enable performance profiling metrics'
 
         option :batch, type: :boolean, default: true, desc: 'Upload images in batch using zip file'
-
+        option :group_delimiter, type: :string, default: '__', desc: 'Delimiter for group and variant names'
         argument :image_paths, type: :array, required: false, desc: 'Paths to folders containing images'
 
         def initialize(network: nil, git_info_provider: nil)
@@ -119,7 +120,7 @@ module EmergeCLI
               raise "Unsupported client library: #{@options[:client_library]}"
             end
           else
-            ClientLibraries::Default.new(image_paths)
+            ClientLibraries::Default.new(image_paths, @options[:group_delimiter])
           end
         end
 
