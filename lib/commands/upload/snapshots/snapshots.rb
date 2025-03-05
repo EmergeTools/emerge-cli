@@ -75,7 +75,7 @@ module EmergeCLI
 
               upload_images(run_id, options[:concurrency], image_files, client)
 
-              @profiler.measure('finish_run') { finish_run(run_id) }
+              @profiler.measure('finish_run') { finish_run(run_id) } unless options[:batch]
             end
 
             Logger.info 'Upload completed successfully!'
