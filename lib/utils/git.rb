@@ -106,13 +106,6 @@ module EmergeCLI
       nil
     end
 
-      command = 'git rev-parse HEAD^'
-      Logger.debug command
-      stdout, stderr, status = Open3.capture3(command)
-      Logger.error "Failed to get previous SHA: #{stdout}, #{stderr}" if !status.success?
-      stdout.strip if status.success?
-    end
-
     def self.primary_remote
       Logger.debug 'Getting primary remote'
       remote = remote()
