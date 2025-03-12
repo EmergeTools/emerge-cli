@@ -79,6 +79,8 @@ module EmergeCLI
         
         if status.success?
           shas = stdout.strip.split("\n")
+          Logger.debug "Found SHAs: #{shas.inspect}"
+          Logger.debug "Previous SHA: #{shas[2]}"
           return shas[2] if shas.length > 2
         else
           Logger.error "Failed to get previous PR SHA: #{stderr}"
