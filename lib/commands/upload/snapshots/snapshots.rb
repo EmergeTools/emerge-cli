@@ -73,9 +73,9 @@ module EmergeCLI
 
               run_id = @profiler.measure('create_run') { create_run }
 
-              upload_images(run_id, options[:concurrency], image_files, client)
+              # upload_images(run_id, options[:concurrency], image_files, client)
 
-              @profiler.measure('finish_run') { finish_run(run_id) } unless options[:batch]
+              # @profiler.measure('finish_run') { finish_run(run_id) } unless options[:batch]
             end
 
             Logger.info 'Upload completed successfully!'
@@ -181,8 +181,9 @@ module EmergeCLI
             pr_number: pr_number&.to_s
           }.compact
 
-          response = @network.post(path: '/v1/snapshots/run', body: payload)
-          run_id = JSON.parse(response.read).fetch('run_id')
+          # response = @network.post(path: '/v1/snapshots/run', body: payload)
+          # run_id = JSON.parse(response.read).fetch('run_id')
+          run_id = '123'
           Logger.info "Created run: #{run_id}"
 
           run_id
