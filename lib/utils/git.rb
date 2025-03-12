@@ -73,15 +73,13 @@ module EmergeCLI
         Logger.debug "PR context detected: #{pr_branch} → #{base_branch}"
         
         # For PR, get the immediate parent of HEAD in the PR branch
-        command = 'git log -n 10 --pretty=format:"%H" HEAD'
+        command = 'git log -n 3 --pretty=format:"%H" HEAD'
         Logger.debug command
         stdout, stderr, status = Open3.capture3(command)
         
         if status.success?
           shas = stdout.strip.split("\n")
-          Logger.debug "Found SHAs: #{shas.inspect}"
-          Logger.debug "Previous SHA: #{shas[1]}"
-          return shas[1] if shas.length > 1
+          return shas[2] if shas.length > 2
         else
           Logger.error "Failed to get previous PR SHA: #{stderr}"
         end
