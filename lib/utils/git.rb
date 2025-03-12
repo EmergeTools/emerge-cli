@@ -63,16 +63,48 @@ module EmergeCLI
 
     def self.previous_sha
       Logger.debug 'Getting previous SHA'
-      command = 'git rev-list --count HEAD'
-      Logger.debug command
-      count_stdout, _, count_status = Open3.capture3(command)
-
-      if !count_status.success? || count_stdout.strip.to_i <= 1
-        Logger.error 'Detected shallow clone while trying to get the previous commit. ' \
-                     'Please clone with full history using: git clone --no-single-branch ' \
-                     'or configure CI with fetch-depth: 0'
-        return nil
+      
+      # First, determine if we're in a PR context
+      pr_branch = ENV['GITHUB_HEAD_REF']
+      base_branch = ENV['GITHUB_BASE_REF']
+      
+      if pr_branch && base_branch
+        # We're in a PR context
+        Logger.debug "PR context detected: #{pr_branch} → #{base_branch}"
+        
+        # For PR, get the immediate parent of HEAD in the PR branch
+        command = 'git log -n 2 --pretty=format:"%H" HEAD'
+        Logger.debug command
+        stdout, stderr, status = Open3.capture3(command)
+        
+        if status.success?
+          shas = stdout.strip.split("\n")
+          return shas[1] if shas.length > 1
+        else
+          Logger.error "Failed to get previous PR SHA: #{stderr}"
+        end
+      else
+        # Not in PR context, your regular logic
+        command = 'git rev-list --count HEAD'
+        Logger.debug command
+        count_stdout, _, count_status = Open3.capture3(command)
+    
+        if !count_status.success? || count_stdout.strip.to_i <= 1
+          Logger.error 'Detected shallow clone while trying to get the previous commit. ' \
+                       'Please clone with full history using: git clone --no-single-branch ' \
+                       'or configure CI with fetch-depth: 0'
+          return nil
+        end
+    
+        command = 'git rev-parse HEAD^'
+        Logger.debug command
+        stdout, stderr, status = Open3.capture3(command)
+        Logger.error "Failed to get previous SHA: #{stdout}, #{stderr}" if !status.success?
+        return stdout.strip if status.success?
       end
+      
+      nil
+    end
 
       command = 'git rev-parse HEAD^'
       Logger.debug command
