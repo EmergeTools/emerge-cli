@@ -50,7 +50,7 @@ module EmergeCLI
     end
 
     def self.previous_sha
-      Logger.debug "Event type: #{pull_request? ? 'pull_request' : 'push'}"
+      Logger.debug "Event typeeee: #{pull_request? ? 'pull_request' : 'push'}"
       Git.previous_sha
     end
 
