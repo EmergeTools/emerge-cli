@@ -20,6 +20,7 @@ require_relative 'commands/upload/snapshots/client_libraries/swift_snapshot_test
 require_relative 'commands/upload/snapshots/client_libraries/paparazzi'
 require_relative 'commands/upload/snapshots/client_libraries/roborazzi'
 require_relative 'commands/upload/snapshots/client_libraries/default'
+require_relative 'commands/test'
 
 require_relative 'reaper/ast_parser'
 require_relative 'reaper/code_deleter'
@@ -43,6 +44,8 @@ require 'dry/cli'
 
 module EmergeCLI
   extend Dry::CLI::Registry
+
+  register 'test', Commands::Test
 
   register 'configure' do |prefix|
     prefix.register 'snapshots-ios', Commands::Config::SnapshotsIOS
@@ -85,3 +88,6 @@ end
 
 # By default the log level is INFO, but can be overridden by the --debug flag
 EmergeCLI::Logger.configure(Logger::INFO)
+
+# Add this at the end of the file
+Dry::CLI.new(EmergeCLI).call if $PROGRAM_NAME == __FILE__
