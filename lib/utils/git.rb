@@ -73,7 +73,7 @@ module EmergeCLI
         Logger.debug "PR context detected: #{pr_branch} → #{base_branch}"
         
         # For PR, get the immediate parent of HEAD in the PR branch
-        command = 'git log -n 2 --pretty=format:"%H" HEAD'
+        command = 'git log -n 10 --pretty=format:"%H" HEAD'
         Logger.debug command
         stdout, stderr, status = Open3.capture3(command)
         
