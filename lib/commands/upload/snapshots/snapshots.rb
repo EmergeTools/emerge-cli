@@ -181,8 +181,8 @@ module EmergeCLI
             pr_number: pr_number&.to_s
           }.compact
 
-          response = @network.post(path: '/v1/snapshots/run', body: payload)
-          run_id = JSON.parse(response.read).fetch('run_id')
+          # response = @network.post(path: '/v1/snapshots/run', body: payload)
+          # run_id = JSON.parse(response.read).fetch('run_id')
           Logger.info "Created run: #{run_id}"
 
           run_id
