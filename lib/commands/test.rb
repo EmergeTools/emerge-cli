@@ -3,7 +3,7 @@ require 'dry/cli'
 module EmergeCLI
   module Commands
     class Test < Dry::CLI::Command
-      desc 'A simple test command that prints git info'
+      desc 'A simple test command that prints git infooooo'
 
       option :fetch_depth, type: :integer, desc: 'Test with specific fetch depth (e.g. --fetch-depth=1)'
 
