@@ -50,7 +50,9 @@ module EmergeCLI
     end
 
     def self.previous_sha
-      Git.previous_sha
+      if is_push?
+        github_event_data.dig(:before)
+      end
     end
 
     def self.github_event_data
