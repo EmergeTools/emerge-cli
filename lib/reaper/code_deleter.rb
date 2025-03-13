@@ -17,7 +17,9 @@ module EmergeCLI
         types.each do |class_info|
           Logger.info "Deleting #{class_info['class_name']}"
 
-          type_name = parse_type_name(class_info['class_name'])
+          type_name_result = parse_type_name(class_info['class_name'])
+          type_name = type_name_result[:type_name]
+          package_name = type_name_result[:package_name]
           Logger.debug "Parsed type name: #{type_name}"
 
           # Remove line number from path if present
@@ -42,7 +44,7 @@ module EmergeCLI
           paths.each do |path|
             Logger.debug "Processing path: #{path}"
             @profiler.measure('delete_type_from_file') do
-              delete_type_from_file(path, type_name)
+              delete_type_from_file(path, type_name, package_name)
             end
           end
 
@@ -71,9 +73,11 @@ module EmergeCLI
       private
 
       def parse_type_name(type_name)
+        package_name = nil
+
         # Remove first module prefix for Swift types if present
         if @platform == 'ios' && type_name.include?('.')
-          type_name.split('.')[1..].join('.')
+          parsed_type_name = type_name.split('.')[1..].join('.')
         # For Android, strip package name and just use the class name
         elsif @platform == 'android' && type_name.include?('.')
           # rubocop:disable Layout/LineLength
@@ -81,22 +85,31 @@ module EmergeCLI
           # rubocop:enable Layout/LineLength
           has_nested_class = type_name.include?('$')
           parts = type_name.split
+
           if parts.length == 0
-            type_name
+            parsed_type_name = type_name
           elsif has_nested_class && parts.length > 1
-            base_name = parts[0].split('.').last
+            full_class_path = parts[0].split('.')
+            base_name = full_class_path.last
             nested_class = parts[1].match(/\$(.+)/).captures.first
-            "#{base_name}.#{nested_class}"
+            parsed_type_name = "#{base_name}.#{nested_class}"
+            # Extract package name (everything except the last part)
+            package_name = full_class_path[0...-1].join('.') if full_class_path.length > 1
           else
-            parts[0].split('.').last
+            full_class_path = parts[0].split('.')
+            parsed_type_name = full_class_path.last
+            # Extract package name (everything except the last part)
+            package_name = full_class_path[0...-1].join('.') if full_class_path.length > 1
           end
         else
-          type_name
+          parsed_type_name = type_name
         end
+
+        { type_name: parsed_type_name, package_name: package_name }
       end
 
-      def delete_type_from_file(path, type_name)
-        full_path = resolve_file_path(path)
+      def delete_type_from_file(path, type_name, marker = nil)
+        full_path = resolve_file_path(path, marker)
         return unless full_path
 
         Logger.debug "Processing file: #{full_path}"
@@ -221,7 +234,7 @@ module EmergeCLI
         end
       end
 
-      def resolve_file_path(path)
+      def resolve_file_path(path, marker = nil)
         # If path starts with /, treat it as relative to project root
         if path.start_with?('/')
           path = path[1..] # Remove leading slash
@@ -242,7 +255,21 @@ module EmergeCLI
           Logger.warn "Could not find #{path} in project"
           return nil
         elsif matching_files.length > 1
-          Logger.warn "Found multiple matches for #{path}: #{matching_files.join(', ')}"
+          Logger.debug "Found multiple matches for #{path}: #{matching_files.join(', ')}"
+
+          # If a marker is provided, use it to select the file
+          # For Android, this is the package name declaration of the type
+          if marker
+            Logger.debug "Using marker #{marker} to select file"
+            marker_files = matching_files.select { |file| File.read(file).include?(marker) }
+            if marker_files.length >= 1
+              Logger.info "Found #{marker_files.length} files with marker #{marker} for #{path}, using first match"
+              return marker_files.first
+            else
+              Logger.warn "No files found with marker #{marker} for #{path}"
+            end
+          end
+
           Logger.warn "Using first match: #{matching_files.first}"
         end
 
