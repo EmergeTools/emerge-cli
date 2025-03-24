@@ -23,8 +23,8 @@ module EmergeCLI
         option :base_sha, type: :string, required: false, desc: 'Base SHA'
         option :previous_sha, type: :string, required: false, desc: 'Previous SHA'
         option :pr_number, type: :string, required: false, desc: 'PR number'
-        option :score, type: :boolean, default: false, required: false, 
-               desc: 'Upload build for generating Emerge Score'
+        option :score, type: :boolean, default: false, required: false,
+                       desc: 'Upload build for generating Emerge Score'
 
         def initialize(network: nil, git_info_provider: nil)
           @network = network
@@ -79,28 +79,28 @@ module EmergeCLI
 
             Logger.info('Upload complete successfully!')
             Logger.info "Time taken: #{(Time.now - start_time).round(2)} seconds"
-            
+
             result_url = if @options[:score]
-              score_url = "https://emergetools.com/score/#{upload_id}"
-              
-              Logger.info 'Fetching score...'
-              score_response = @network.get(
-                path: '/score',
-                query: { uploadId: upload_id }
-              )
-              
-              unless score_response.status == 200
-                Logger.error("Score calculation trigger failed with status #{score_response.status}")
-                Logger.error("Response body: #{score_response.body}")
-                raise "Score calculation trigger failed with status #{score_response.status}"
-              end
-              
-              Logger.info '✅ Score calculation triggered'
-              score_url
-            else
-              "https://emergetools.com/build/#{upload_id}"
-            end
-            
+                           score_url = "https://emergetools.com/score/#{upload_id}"
+
+                           Logger.info 'Fetching score...'
+                           score_response = @network.get(
+                             path: '/score',
+                             query: { uploadId: upload_id }
+                           )
+
+                           unless score_response.status == 200
+                             Logger.error("Score calculation trigger failed with status #{score_response.status}")
+                             Logger.error("Response body: #{score_response.body}")
+                             raise "Score calculation trigger failed with status #{score_response.status}"
+                           end
+
+                           Logger.info '✅ Score calculation triggered'
+                           score_url
+                         else
+                           "https://emergetools.com/build/#{upload_id}"
+                         end
+
             Logger.info("✅ You can view the #{@options[:score] ? 'score' : 'build analysis'} at #{result_url}")
           end
         end
