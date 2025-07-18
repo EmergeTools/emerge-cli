@@ -23,6 +23,7 @@ module EmergeCLI
         option :base_sha, type: :string, required: false, desc: 'Base SHA'
         option :previous_sha, type: :string, required: false, desc: 'Previous SHA'
         option :pr_number, type: :string, required: false, desc: 'PR number'
+        option :tag, type: :string, required: false, desc: 'Tag to associate with this build'
 
         def initialize(network: nil, git_info_provider: nil)
           @network = network
@@ -102,7 +103,8 @@ module EmergeCLI
             # Optional
             base_sha:,
             previous_sha:,
-            pr_number: pr_number&.to_s
+            pr_number: pr_number&.to_s,
+            tag: @options[:tag]
           }.compact
 
           upload_response = @network.post(
