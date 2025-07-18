@@ -74,6 +74,7 @@ module EmergeCLI
             base_sha: 'custom-base-sha',
             previous_sha: 'custom-previous-sha',
             pr_number: 'custom-pr',
+            tag: 'manual-run',
             concurrency: 1
           }
 
@@ -85,6 +86,7 @@ module EmergeCLI
           assert_equal 'custom-base-sha', run_request[:body][:base_sha]
           assert_equal 'custom-previous-sha', run_request[:body][:previous_sha]
           assert_equal 'custom-pr', run_request[:body][:pr_number]
+          assert_equal 'manual-run', run_request[:body][:tag]
         end
       end
     end
