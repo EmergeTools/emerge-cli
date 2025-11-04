@@ -36,7 +36,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'dry-cli', '~> 1.2.0'
   spec.add_dependency 'nkf', '~> 0.1.3'
   spec.add_dependency 'open3', '~> 0.2.1'
-  spec.add_dependency 'openssl', '>= 3.1.2'
   spec.add_dependency 'ruby-macho', '~> 4.1.0'
   spec.add_dependency 'ruby_tree_sitter', '~> 1.9'
   spec.add_dependency 'rubyzip', '~> 2.3.0'
