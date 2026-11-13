@@ -264,7 +264,7 @@ module EmergeCLI
             end
 
             Logger.info 'Uploading images...'
-            Logger.debug "Uploading batch zip file to #{upload_url}"
+            Logger.debug "Uploading batch zip file to #{EmergeCLI::Network.redact_uri(upload_url)}"
             @profiler.measure('upload_batch_zip') do
               @network.put(
                 path: upload_url,

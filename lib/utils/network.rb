@@ -33,6 +33,15 @@ module EmergeCLI
       @internet.close
     end
 
+    # Returns the URI with its query string replaced, so it is safe to log.
+    def self.redact_uri(uri)
+      uri_string = uri.to_s
+      query_start = uri_string.index('?')
+      return uri_string unless query_start
+
+      "#{uri_string[0...query_start]}?[REDACTED]"
+    end
+
     private
 
     def request(method, path, body, custom_headers, query = nil, max_retries = MAX_RETRIES)
@@ -47,6 +56,9 @@ module EmergeCLI
               )
             end
       absolute_uri = uri.to_s
+      # Never log the query string: presigned upload URLs carry signatures and
+      # temporary credentials there, and CLI output often ends up in public CI logs.
+      loggable_uri = self.class.redact_uri(absolute_uri)
 
       headers = {
         'User-Agent' => "emerge-cli/#{EmergeCLI::VERSION}"
@@ -57,15 +69,15 @@ module EmergeCLI
 
       body = JSON.dump(body) if body.is_a?(Hash) && method == :post
 
-      Logger.debug "Request: #{method} #{truncate_uri(absolute_uri)} #{method == :post ? body : 'N/A'}"
+      Logger.debug "Request: #{method} #{truncate_uri(loggable_uri)} #{method == :post ? body : 'N/A'}"
 
       retries = 0
       begin
         response = perform_request(method, absolute_uri, headers, body)
 
         unless response.success?
-          Logger.error "Request failed: #{absolute_uri} #{response}"
-          raise "Request failed: #{absolute_uri} #{response}"
+          Logger.error "Request failed: #{loggable_uri} #{response}"
+          raise "Request failed: #{loggable_uri} #{response}"
         end
 
         response
@@ -88,7 +100,7 @@ module EmergeCLI
           retry
         else
           unless max_retries == 0
-            Logger.error "Request failed after #{max_retries} attempts: #{absolute_uri} #{e.message}"
+            Logger.error "Request failed after #{max_retries} attempts: #{loggable_uri} #{e.message}"
           end
           raise e
         end
